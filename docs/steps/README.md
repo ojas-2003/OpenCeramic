@@ -12,7 +12,7 @@ The guide owns the contracts; these documents own the reasoning.
 | 1 | [Scaffold](step-01-scaffold.md) | `59b5b84`, `75e44cf` | done |
 | 2 | [Database schema](step-02-schema.md) 🔒 | `653c94c` | done |
 | 3 | [Fiber client + fake client](step-03-fiber-client.md) | `4a7f7b0` | done |
-| 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `pending` | done |
+| 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `e9af2f2` | done |
 | 5 | Planner 🔒 | — | next |
 | 6 | Executor (Inngest function) 🔒 | — | |
 | 7 | Remaining adapters | — | |
