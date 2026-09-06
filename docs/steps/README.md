@@ -12,8 +12,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 1 | [Scaffold](step-01-scaffold.md) | `59b5b84`, `75e44cf` | done |
 | 2 | [Database schema](step-02-schema.md) 🔒 | `653c94c` | done |
 | 3 | [Fiber client + fake client](step-03-fiber-client.md) | `4a7f7b0` | done |
-| 4 | Enrichment interface, registry, first adapter 🔒 | — | next |
-| 5 | Planner 🔒 | — | |
+| 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `pending` | done |
+| 5 | Planner 🔒 | — | next |
 | 6 | Executor (Inngest function) 🔒 | — | |
 | 7 | Remaining adapters | — | |
 | 8 | API routes | — | |
@@ -43,3 +43,5 @@ by later steps.
 | 1 | Vitest pinned to 4, not 5 | Chosen for the more settled line after a native-binding fight |
 | 2 | `columns.config` defaults to `{"inputs":{}}`, not `{}` | `{}` would violate the declared `ColumnConfig` type at every read site |
 | 3 | Fixture type assertions widen literals via `DeepWiden` | TypeScript widens string literals on JSON import; structural checks all retained |
+| 4 | `types.generated.ts` → `.d.ts` | `skipLibCheck` only applies to declaration files; cut typecheck CPU from minutes to ~1.3s |
+| 4 | `tests/scaffold.test.ts` deleted | Step 1 placeholder; its Inngest SDK import cost 40s per test run and asserted nothing |
