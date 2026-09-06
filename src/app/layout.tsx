@@ -23,7 +23,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    // Browser extensions (dark-mode toggles, etc.) inject attributes onto <html>
+    // before React hydrates, which React reports as a hydration mismatch.
+    // suppressHydrationWarning applies to this element's attributes only.
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

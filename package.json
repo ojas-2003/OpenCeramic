@@ -14,7 +14,8 @@
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx src/db/seed.ts",
     "fiber:types": "openapi-typescript https://api.fiber.ai/openapi.json -o src/fiber/types.generated.ts",
-    "inngest:dev": "npx inngest-cli@latest dev"
+    "inngest:dev": "docker compose up inngest",
+    "inngest:down": "docker compose down"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -42,7 +43,7 @@
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@vitest/coverage-v8": "^5.0.0",
+    "@vitest/coverage-v8": "^4.1.11",
     "eslint": "^9",
     "eslint-config-next": "15.5.25",
     "openapi-typescript": "^7.13.0",
@@ -50,6 +51,6 @@
     "tailwindcss": "^4",
     "tsx": "^4.23.13",
     "typescript": "^5",
-    "vitest": "^5.0.0"
+    "vitest": "^4.1.11"
   }
 }

@@ -1,0 +1,23 @@
+# Local development services.
+#
+# Only the Inngest dev server runs in Docker. Next.js stays on the host
+# (`pnpm dev`) so hot reload is fast, and Postgres is Neon in the cloud.
+#
+#   pnpm inngest:dev   -> docker compose up inngest
+#   http://localhost:8288   Inngest dev UI (runs, steps, event stream)
+
+services:
+  inngest:
+    image: inngest/inngest:latest
+    container_name: openceramic-inngest
+    command:
+      - inngest
+      - dev
+      - --host
+      - 0.0.0.0
+      - -u
+      - http://host.docker.internal:3000/api/inngest
+    ports:
+      - "8288:8288"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
