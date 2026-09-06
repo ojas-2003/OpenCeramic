@@ -1,0 +1,74 @@
+{
+  "operationId": "socialMediaLookupPolling",
+  "path": "/v1/social-media-lookup/polling",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "status": "completed",
+        "data": [
+          {
+            "fullName": "Patrick Collison",
+            "customerProvidedId": "https://www.linkedin.com/in/patrickcollison",
+            "outcome": "FOUND_CANDIDATES",
+            "candidates": [
+              {
+                "platform": "TWITTER",
+                "handle": "patrickc",
+                "profileUrl": "https://x.com/patrickc",
+                "displayName": "Patrick Collison",
+                "followerCount": 421000,
+                "isVerified": true,
+                "confidenceOutOf10": 9
+              },
+              {
+                "platform": "INSTAGRAM",
+                "handle": "patrickcollison",
+                "profileUrl": "https://instagram.com/patrickcollison",
+                "confidenceOutOf10": 7
+              }
+            ]
+          }
+        ],
+        "nextCursor": null,
+        "hasMore": false
+      },
+      "chargeInfo": {
+        "method": "charging-later",
+        "message": "Polling is free; the trigger call was charged."
+      }
+    },
+    "pending": {
+      "output": {
+        "status": "in_progress",
+        "data": [],
+        "nextCursor": null,
+        "hasMore": false
+      },
+      "chargeInfo": {
+        "method": "charging-later",
+        "message": "Run still in progress."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "status": "completed",
+      "data": [
+        {
+          "fullName": "Unknown Person",
+          "customerProvidedId": "https://www.linkedin.com/in/no-socials",
+          "outcome": "NO_CANDIDATES_FOUND",
+          "candidates": []
+        }
+      ],
+      "nextCursor": null,
+      "hasMore": false
+    },
+    "chargeInfo": {
+      "method": "charging-later",
+      "message": "No candidates found."
+    }
+  }
+}

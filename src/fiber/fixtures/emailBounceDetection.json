@@ -1,0 +1,40 @@
+{
+  "operationId": "emailBounceDetection",
+  "path": "/v1/validate-email/single",
+  "method": "post",
+  "creditCost": 1,
+  "responses": {
+    "*": {
+      "output": {
+        "email": "patrick@stripe.com",
+        "is_catch_all": false,
+        "is_role_based": false,
+        "is_disposable": false,
+        "is_consumer": false,
+        "email_provider": "google",
+        "verdict": "ok",
+        "deliverability_score": 0.96
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 1
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "email": "nobody@example.invalid",
+      "is_catch_all": false,
+      "is_role_based": false,
+      "is_disposable": false,
+      "is_consumer": false,
+      "email_provider": "unknown",
+      "verdict": "undeliverable",
+      "deliverability_score": 0.02
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 1
+    }
+  }
+}

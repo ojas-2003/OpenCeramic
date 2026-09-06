@@ -1,0 +1,40 @@
+{
+  "operationId": "peopleSearch",
+  "path": "/v1/people-search",
+  "method": "post",
+  "creditCost": 1,
+  "responses": {
+    "*": {
+      "output": {
+        "data": [
+          {
+            "primary_slug": "patrickcollison",
+            "full_name": "Patrick Collison",
+            "first_name": "Patrick",
+            "last_name": "Collison",
+            "headline": "CEO at Stripe",
+            "location_name": "South San Francisco, California",
+            "linkedin_url": "https://www.linkedin.com/in/patrickcollison"
+          }
+        ],
+        "estimatedCount": 1,
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 1
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "data": [],
+      "estimatedCount": 0,
+      "nextCursor": null
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 0
+    }
+  }
+}

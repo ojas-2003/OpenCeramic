@@ -1,0 +1,30 @@
+{
+  "operationId": "startBatchContactDetails",
+  "path": "/v1/contact-details/batch/start",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "taskId": "task_01HZY8QK3M4N5P6R7S8T9UVWXY",
+        "numPeopleEnqueued": 2,
+        "numDuplicatesSkipped": 0
+      },
+      "chargeInfo": {
+        "method": "charging-later",
+        "message": "Charged per revealed contact when the batch completes."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "taskId": "task_01HZY8QK3M4N5P6R7S8T9EMPTY",
+      "numPeopleEnqueued": 0,
+      "numDuplicatesSkipped": 0
+    },
+    "chargeInfo": {
+      "method": "charging-later",
+      "message": "Nothing enqueued."
+    }
+  }
+}

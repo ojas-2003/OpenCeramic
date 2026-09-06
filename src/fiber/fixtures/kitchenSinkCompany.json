@@ -1,0 +1,66 @@
+{
+  "operationId": "kitchenSinkCompany",
+  "path": "/v1/kitchen-sink/company",
+  "method": "post",
+  "creditCost": 2,
+  "responses": {
+    "*": {
+      "output": {
+        "data": [
+          {
+            "linkedin_id": "1441",
+            "li_org_id": "1441",
+            "linkedin_primary_slug": "stripe",
+            "linkedin_slugs": [
+              "stripe"
+            ],
+            "preferred_name": "Stripe",
+            "names": [
+              "Stripe",
+              "Stripe, Inc."
+            ],
+            "domains": [
+              "stripe.com"
+            ],
+            "websites": [
+              "https://stripe.com"
+            ],
+            "short_description": "Financial infrastructure for the internet.",
+            "long_description": "Stripe builds economic infrastructure for the internet. Businesses use Stripe to accept payments and manage their operations online.",
+            "founded_on_consensus": "2010-01-01",
+            "status_consensus": "operating",
+            "funding_stage": "Series I",
+            "total_funding_consensus": 8700000000,
+            "latest_funding_consensus": 6500000000,
+            "li_follower_count": 812000,
+            "li_headline": "Financial infrastructure for the internet",
+            "logo_url": "https://logo.clearbit.com/stripe.com",
+            "crunchbase_slug": "stripe",
+            "twitter_handles": [
+              "stripe"
+            ],
+            "instagram_handles": [
+              "stripe"
+            ],
+            "num_funding_rounds": 21,
+            "is_subsidiary": false,
+            "relevance_score": 0.98
+          }
+        ]
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 2
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "data": []
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 0
+    }
+  }
+}

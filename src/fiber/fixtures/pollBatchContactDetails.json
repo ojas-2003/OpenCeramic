@@ -1,0 +1,91 @@
+{
+  "operationId": "pollBatchContactDetails",
+  "path": "/v1/contact-details/batch/poll",
+  "method": "post",
+  "creditCost": 3,
+  "responses": {
+    "*": {
+      "output": {
+        "overallStats": {
+          "totalPeopleToFetch": 2,
+          "numCompleted": 2,
+          "numFailed": 0,
+          "numRemaining": 0,
+          "numRejected": 0,
+          "numDuplicates": 0
+        },
+        "done": true,
+        "failed": false,
+        "canceled": false,
+        "pageResults": [
+          {
+            "inputs": {
+              "linkedinUrl": {
+                "value": "https://www.linkedin.com/in/patrickcollison"
+              }
+            },
+            "outputs": {
+              "emails": [
+                {
+                  "email": "patrick@stripe.com",
+                  "type": "work",
+                  "status": "valid"
+                }
+              ],
+              "phoneNumbers": [
+                {
+                  "number": "+14155550123",
+                  "type": "mobile"
+                }
+              ],
+              "exhaustive": true
+            }
+          },
+          {
+            "inputs": {
+              "linkedinUrl": {
+                "value": "https://www.linkedin.com/in/no-contact-found"
+              }
+            },
+            "outputs": null
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 3
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "overallStats": {
+        "totalPeopleToFetch": 1,
+        "numCompleted": 0,
+        "numFailed": 1,
+        "numRemaining": 0,
+        "numRejected": 0,
+        "numDuplicates": 0
+      },
+      "done": true,
+      "failed": false,
+      "canceled": false,
+      "pageResults": [
+        {
+          "inputs": {
+            "linkedinUrl": {
+              "value": "https://www.linkedin.com/in/no-contact-found"
+            }
+          },
+          "outputs": null
+        }
+      ],
+      "nextCursor": null
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 0
+    }
+  }
+}

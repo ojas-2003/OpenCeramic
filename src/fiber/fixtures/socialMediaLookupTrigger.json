@@ -1,0 +1,26 @@
+{
+  "operationId": "socialMediaLookupTrigger",
+  "path": "/v1/social-media-lookup/trigger",
+  "method": "post",
+  "creditCost": 2,
+  "responses": {
+    "*": {
+      "output": {
+        "socialMediaFinderRunId": "smf_01HZY8QK3M4N5P6R7S8T9UVWXY"
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 2
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "socialMediaFinderRunId": "smf_01HZY8QK3M4N5P6R7S8T9EMPTY"
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 0
+    }
+  }
+}

@@ -1,0 +1,44 @@
+{
+  "operationId": "getCompanyRevenue",
+  "path": "/v1/company-revenue",
+  "method": "post",
+  "creditCost": 1,
+  "responses": {
+    "*": {
+      "output": {
+        "company": {
+          "linkedinUrl": "https://www.linkedin.com/company/stripe",
+          "linkedinOrgId": "1441",
+          "name": "Stripe",
+          "domain": "stripe.com"
+        },
+        "revenueInfo": {
+          "lowerBound": 3000000000,
+          "upperBound": 5000000000,
+          "fiscalYear": 2024,
+          "citations": [
+            "https://stripe.com/newsroom/news/annual-letter-2024"
+          ],
+          "comments": "Estimate derived from public annual letter and payment volume."
+        }
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 1
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "company": {
+        "linkedinUrl": "https://www.linkedin.com/company/unknown-co",
+        "linkedinOrgId": "0"
+      },
+      "revenueInfo": null
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 0
+    }
+  }
+}
