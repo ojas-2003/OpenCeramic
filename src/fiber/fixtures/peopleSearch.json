@@ -3,27 +3,464 @@
   "path": "/v1/people-search",
   "method": "post",
   "creditCost": 1,
+  "_recorded": "Captured from api.fiber.ai with a sandbox key; field names are real.",
   "responses": {
     "*": {
       "output": {
         "data": [
           {
-            "primary_slug": "patrickcollison",
-            "full_name": "Patrick Collison",
-            "first_name": "Patrick",
-            "last_name": "Collison",
-            "headline": "CEO at Stripe",
-            "location_name": "South San Francisco, California",
-            "linkedin_url": "https://www.linkedin.com/in/patrickcollison"
+            "connection_count": 1890,
+            "education": [
+              {
+                "school_name": "Example State University",
+                "field_of_study_name": "Mechanical Engineering",
+                "degree": "BS",
+                "start_date": "2009-09-01T00:00:00.000Z",
+                "end_date": "2013-06-01T00:00:00.000Z"
+              }
+            ],
+            "experiences": [
+              {
+                "linkedin_company_id": "900000001",
+                "is_current": true,
+                "company_name": "Northwind Robotics",
+                "locality": "San Francisco, California, United States",
+                "start_date": "2021-04-01T00:00:00.000Z",
+                "title": "VP of Engineering",
+                "seniority": "Executive",
+                "job_function": [
+                  "Engineering"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              },
+              {
+                "linkedin_company_id": "900000003",
+                "is_current": false,
+                "company_name": "Larkspur Freight",
+                "locality": "Chicago, Illinois, United States",
+                "start_date": "2017-01-01T00:00:00.000Z",
+                "end_date": "2021-03-31T00:00:00.000Z",
+                "title": "Director of Engineering",
+                "seniority": "Director",
+                "job_function": [
+                  "Engineering"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              }
+            ],
+            "first_name": "Jane",
+            "follower_count": 4210,
+            "headline": "VP of Engineering at Northwind Robotics",
+            "inferred_location": {
+              "city": "San Francisco",
+              "state_name": "California",
+              "state_code": "CA",
+              "country_code": "USA",
+              "country_name": "United States",
+              "timezone": "America/Los_Angeles",
+              "formatted_address": "San Francisco, CA, United States"
+            },
+            "last_name": "Doe",
+            "locality": "San Francisco, California, United States",
+            "name": "Jane Doe",
+            "profile_pic": "https://northwind-robotics.example.com/team/jane-doe.jpg",
+            "skills": [
+              "Robotics",
+              "Distributed Systems",
+              "Engineering Management"
+            ],
+            "primary_slug": "jane-doe-sandbox",
+            "slugs": [
+              "jane-doe-sandbox"
+            ],
+            "url": "https://www.linkedin.com/in/jane-doe-sandbox",
+            "user_id": "900000201",
+            "career_began_at": "2013-07-01T00:00:00.000Z",
+            "tags": [
+              "decision-maker",
+              "deep-technical-background"
+            ],
+            "open_to_work": false,
+            "premium": true,
+            "current_job": {
+              "linkedin_company_id": "900000001",
+              "is_current": true,
+              "company_name": "Northwind Robotics",
+              "locality": "San Francisco, California, United States",
+              "start_date": "2021-04-01T00:00:00.000Z",
+              "title": "VP of Engineering",
+              "seniority": "Executive",
+              "job_function": [
+                "Engineering"
+              ],
+              "employment_type": [
+                "Full-time"
+              ]
+            },
+            "last_sort_key": "sandbox-profile-1",
+            "industry_name": "Industrial Automation"
+          },
+          {
+            "connection_count": 760,
+            "education": [
+              {
+                "school_name": "Example Institute of Technology",
+                "field_of_study_name": "Robotics",
+                "degree": "MS",
+                "start_date": "2018-09-01T00:00:00.000Z",
+                "end_date": "2020-06-01T00:00:00.000Z"
+              }
+            ],
+            "experiences": [
+              {
+                "linkedin_company_id": "900000001",
+                "is_current": true,
+                "company_name": "Northwind Robotics",
+                "locality": "San Francisco, California, United States",
+                "start_date": "2022-08-15T00:00:00.000Z",
+                "title": "Staff Software Engineer",
+                "seniority": "Mid-Senior level",
+                "job_function": [
+                  "Engineering"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              }
+            ],
+            "first_name": "Amara",
+            "follower_count": 980,
+            "headline": "Staff Software Engineer at Northwind Robotics",
+            "inferred_location": {
+              "city": "San Francisco",
+              "state_name": "California",
+              "state_code": "CA",
+              "country_code": "USA",
+              "country_name": "United States",
+              "timezone": "America/Los_Angeles",
+              "formatted_address": "San Francisco, CA, United States"
+            },
+            "last_name": "Okafor",
+            "locality": "San Francisco, California, United States",
+            "name": "Amara Okafor",
+            "profile_pic": "https://northwind-robotics.example.com/team/amara-okafor.jpg",
+            "skills": [
+              "Rust",
+              "ROS",
+              "Motion Planning"
+            ],
+            "primary_slug": "amara-okafor-sandbox",
+            "slugs": [
+              "amara-okafor-sandbox"
+            ],
+            "url": "https://www.linkedin.com/in/amara-okafor-sandbox",
+            "user_id": "900000202",
+            "career_began_at": "2020-07-01T00:00:00.000Z",
+            "tags": [
+              "deep-technical-background"
+            ],
+            "open_to_work": false,
+            "premium": false,
+            "current_job": {
+              "linkedin_company_id": "900000001",
+              "is_current": true,
+              "company_name": "Northwind Robotics",
+              "locality": "San Francisco, California, United States",
+              "start_date": "2022-08-15T00:00:00.000Z",
+              "title": "Staff Software Engineer",
+              "seniority": "Mid-Senior level",
+              "job_function": [
+                "Engineering"
+              ],
+              "employment_type": [
+                "Full-time"
+              ]
+            },
+            "last_sort_key": "sandbox-profile-2",
+            "industry_name": "Computer Software"
+          },
+          {
+            "connection_count": 3100,
+            "education": [
+              {
+                "school_name": "Example State University",
+                "field_of_study_name": "Electrical Engineering",
+                "degree": "BS",
+                "start_date": "2006-09-01T00:00:00.000Z",
+                "end_date": "2010-06-01T00:00:00.000Z"
+              }
+            ],
+            "experiences": [
+              {
+                "linkedin_company_id": "900000001",
+                "is_current": true,
+                "company_name": "Northwind Robotics",
+                "locality": "San Francisco, California, United States",
+                "start_date": "2018-03-01T00:00:00.000Z",
+                "title": "Co-founder & Chief Executive Officer",
+                "seniority": "Executive",
+                "job_function": [
+                  "Entrepreneurship"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              }
+            ],
+            "first_name": "Tomas",
+            "follower_count": 22400,
+            "headline": "Co-founder & CEO at Northwind Robotics",
+            "inferred_location": {
+              "city": "San Francisco",
+              "state_name": "California",
+              "state_code": "CA",
+              "country_code": "USA",
+              "country_name": "United States",
+              "timezone": "America/Los_Angeles",
+              "formatted_address": "San Francisco, CA, United States"
+            },
+            "last_name": "Delgado",
+            "locality": "San Francisco, California, United States",
+            "name": "Tomas Delgado",
+            "profile_pic": "https://northwind-robotics.example.com/team/tomas-delgado.jpg",
+            "skills": [
+              "Robotics",
+              "Fundraising",
+              "Product Strategy"
+            ],
+            "primary_slug": "tomas-delgado-sandbox",
+            "slugs": [
+              "tomas-delgado-sandbox"
+            ],
+            "url": "https://www.linkedin.com/in/tomas-delgado-sandbox",
+            "user_id": "900000203",
+            "career_began_at": "2010-07-01T00:00:00.000Z",
+            "tags": [
+              "c-suite",
+              "decision-maker",
+              "second-time-founder"
+            ],
+            "open_to_work": false,
+            "premium": true,
+            "is_hiring": true,
+            "current_job": {
+              "linkedin_company_id": "900000001",
+              "is_current": true,
+              "company_name": "Northwind Robotics",
+              "locality": "San Francisco, California, United States",
+              "start_date": "2018-03-01T00:00:00.000Z",
+              "title": "Co-founder & Chief Executive Officer",
+              "seniority": "Executive",
+              "job_function": [
+                "Entrepreneurship"
+              ],
+              "employment_type": [
+                "Full-time"
+              ]
+            },
+            "last_sort_key": "sandbox-profile-3",
+            "industry_name": "Industrial Automation"
+          },
+          {
+            "connection_count": 1120,
+            "education": [
+              {
+                "school_name": "Example University",
+                "field_of_study_name": "Epidemiology",
+                "degree": "PhD",
+                "start_date": "2014-09-01T00:00:00.000Z",
+                "end_date": "2019-06-01T00:00:00.000Z"
+              }
+            ],
+            "experiences": [
+              {
+                "linkedin_company_id": "900000002",
+                "is_current": true,
+                "company_name": "Meridian Health Analytics",
+                "locality": "Boston, Massachusetts, United States",
+                "start_date": "2022-01-10T00:00:00.000Z",
+                "title": "Head of Data Science",
+                "seniority": "Director",
+                "job_function": [
+                  "Research"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              }
+            ],
+            "first_name": "Liam",
+            "follower_count": 1540,
+            "headline": "Head of Data Science at Meridian Health Analytics",
+            "inferred_location": {
+              "city": "Boston",
+              "state_name": "Massachusetts",
+              "state_code": "MA",
+              "country_code": "USA",
+              "country_name": "United States",
+              "timezone": "America/New_York",
+              "formatted_address": "Boston, MA, United States"
+            },
+            "last_name": "Fitzgerald",
+            "locality": "Boston, Massachusetts, United States",
+            "name": "Liam Fitzgerald",
+            "profile_pic": "https://meridian-health.example.com/team/liam-fitzgerald.jpg",
+            "skills": [
+              "Biostatistics",
+              "Python",
+              "Causal Inference"
+            ],
+            "primary_slug": "liam-fitzgerald-sandbox",
+            "slugs": [
+              "liam-fitzgerald-sandbox"
+            ],
+            "url": "https://www.linkedin.com/in/liam-fitzgerald-sandbox",
+            "user_id": "900000204",
+            "career_began_at": "2019-07-01T00:00:00.000Z",
+            "tags": [
+              "phd",
+              "decision-maker"
+            ],
+            "open_to_work": false,
+            "premium": false,
+            "current_job": {
+              "linkedin_company_id": "900000002",
+              "is_current": true,
+              "company_name": "Meridian Health Analytics",
+              "locality": "Boston, Massachusetts, United States",
+              "start_date": "2022-01-10T00:00:00.000Z",
+              "title": "Head of Data Science",
+              "seniority": "Director",
+              "job_function": [
+                "Research"
+              ],
+              "employment_type": [
+                "Full-time"
+              ]
+            },
+            "last_sort_key": "sandbox-profile-4",
+            "industry_name": "Hospital & Health Care"
+          },
+          {
+            "connection_count": 1430,
+            "education": [
+              {
+                "school_name": "Example State University",
+                "field_of_study_name": "Supply Chain Management",
+                "degree": "BA",
+                "start_date": "2011-09-01T00:00:00.000Z",
+                "end_date": "2015-06-01T00:00:00.000Z"
+              }
+            ],
+            "experiences": [
+              {
+                "linkedin_company_id": "900000003",
+                "is_current": true,
+                "company_name": "Larkspur Freight",
+                "locality": "Chicago, Illinois, United States",
+                "start_date": "2024-02-01T00:00:00.000Z",
+                "title": "Director of Operations",
+                "seniority": "Director",
+                "job_function": [
+                  "Operations"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              },
+              {
+                "linkedin_company_id": "900000003",
+                "is_current": false,
+                "company_name": "Larkspur Freight",
+                "locality": "Chicago, Illinois, United States",
+                "start_date": "2019-05-01T00:00:00.000Z",
+                "end_date": "2024-01-31T00:00:00.000Z",
+                "title": "Senior Operations Manager",
+                "seniority": "Mid-Senior level",
+                "job_function": [
+                  "Operations"
+                ],
+                "employment_type": [
+                  "Full-time"
+                ]
+              }
+            ],
+            "first_name": "Priya",
+            "follower_count": 2060,
+            "headline": "Director of Operations at Larkspur Freight",
+            "inferred_location": {
+              "city": "Chicago",
+              "state_name": "Illinois",
+              "state_code": "IL",
+              "country_code": "USA",
+              "country_name": "United States",
+              "timezone": "America/Chicago",
+              "formatted_address": "Chicago, IL, United States"
+            },
+            "last_name": "Raman",
+            "locality": "Chicago, Illinois, United States",
+            "name": "Priya Raman",
+            "profile_pic": "https://larkspur-freight.example.com/team/priya-raman.jpg",
+            "skills": [
+              "Network Design",
+              "Lean Operations",
+              "Vendor Management"
+            ],
+            "primary_slug": "priya-raman-sandbox",
+            "slugs": [
+              "priya-raman-sandbox"
+            ],
+            "url": "https://www.linkedin.com/in/priya-raman-sandbox",
+            "user_id": "900000205",
+            "career_began_at": "2015-07-01T00:00:00.000Z",
+            "tags": [
+              "decision-maker",
+              "recently-promoted"
+            ],
+            "open_to_work": true,
+            "premium": false,
+            "current_job": {
+              "linkedin_company_id": "900000003",
+              "is_current": true,
+              "company_name": "Larkspur Freight",
+              "locality": "Chicago, Illinois, United States",
+              "start_date": "2024-02-01T00:00:00.000Z",
+              "title": "Director of Operations",
+              "seniority": "Director",
+              "job_function": [
+                "Operations"
+              ],
+              "employment_type": [
+                "Full-time"
+              ]
+            },
+            "last_sort_key": "sandbox-profile-5",
+            "industry_name": "Transportation/Trucking/Railroad"
           }
         ],
-        "estimatedCount": 1,
-        "nextCursor": null
+        "estimatedCount": null,
+        "nextCursor": "sandbox-profile-5"
       },
       "chargeInfo": {
-        "method": "charged-now",
-        "creditsCharged": 1
-      }
+        "method": "free",
+        "message": "Sandbox response \u2014 no credits charged."
+      },
+      "warnings": [
+        {
+          "field": "limit",
+          "message": "You passed an extraneous field 'limit'. Did you mean to pass this field somewhere else? Also, please remove any extraneous fields, because a future version of the API will reject calls that have extraneous fields."
+        }
+      ],
+      "advice": [
+        "Fiber indexes 800M+ professionals with real-time job change detection and stealth mode tracking.",
+        "After finding prospects, use lite reveal to get verified emails for as low as 1 credit per contact \u2014 the most affordable on the market.",
+        "Use paginated combined search to find people at companies matching specific criteria in one API call.",
+        "Fiber's people search supports filtering by education, skills, languages, stealth mode, and 10K+ company scoping \u2014 capabilities unique to Fiber."
+      ]
     }
   },
   "notFound": {
@@ -33,8 +470,20 @@
       "nextCursor": null
     },
     "chargeInfo": {
-      "method": "charged-now",
-      "creditsCharged": 0
-    }
+      "method": "free",
+      "message": "Sandbox response \u2014 no credits charged."
+    },
+    "warnings": [
+      {
+        "field": "limit",
+        "message": "You passed an extraneous field 'limit'. Did you mean to pass this field somewhere else? Also, please remove any extraneous fields, because a future version of the API will reject calls that have extraneous fields."
+      }
+    ],
+    "advice": [
+      "Fiber indexes 800M+ professionals with real-time job change detection and stealth mode tracking.",
+      "After finding prospects, use lite reveal to get verified emails for as low as 1 credit per contact \u2014 the most affordable on the market.",
+      "Use paginated combined search to find people at companies matching specific criteria in one API call.",
+      "Fiber's people search supports filtering by education, skills, languages, stealth mode, and 10K+ company scoping \u2014 capabilities unique to Fiber."
+    ]
   }
 }

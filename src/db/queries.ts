@@ -88,6 +88,12 @@ export async function upsertCells(values: NewCell[]): Promise<void> {
   }
 }
 
+/** The planner supplies the id so cells can reference the run as they are written. */
+export async function createRun(run: NewRun): Promise<Run> {
+  const [created] = await db.insert(runs).values(run).returning();
+  return created;
+}
+
 export type RunPatch = Partial<Omit<NewRun, "id" | "tableId" | "createdAt">>;
 
 export async function updateRun(

@@ -32,8 +32,17 @@ export class FiberError extends Error {
   }
 }
 
-/** Retryable: 429, any 5xx, and transport-level failures (network, timeout). */
+/**
+ * Retryable: 429, most 5xx, and transport-level failures (network, timeout).
+ *
+ * 501 and 505 are the exceptions. Fiber returns 501 "Sandbox mode is not yet
+ * available for this endpoint" on a sandbox key, which no amount of backoff
+ * will fix — retrying it just burns three attempts per cell.
+ */
+const TERMINAL_5XX = new Set([501, 505]);
+
 export function isRetryableStatus(status: number): boolean {
+  if (TERMINAL_5XX.has(status)) return false;
   return status === 429 || status >= 500;
 }
 
@@ -44,6 +53,7 @@ function defaultCodeFor(status: number): string {
   if (status === 403) return "forbidden";
   if (status === 404) return "not_found";
   if (status === 429) return "rate_limited";
+  if (status === 501) return "not_implemented";
   if (status >= 500) return "server_error";
   return "http_error";
 }

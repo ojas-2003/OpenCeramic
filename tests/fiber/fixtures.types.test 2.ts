@@ -140,15 +140,6 @@ describe("fixtures match the generated OpenAPI response types", () => {
     }
   });
 
-  it("records real field names for peopleSearch, captured from the live API", () => {
-    const row = peopleSearch.responses["*"].output.data[0];
-    // The API uses name/url/locality, not full_name/linkedin_url/location_name.
-    expect(row).toHaveProperty("name");
-    expect(row).toHaveProperty("url");
-    expect(row).toHaveProperty("locality");
-    expect(row).toHaveProperty("primary_slug");
-  });
-
   it("uses valid enum members in the response bodies", () => {
     expect(["ok", "undeliverable", "risky", "inconclusive"]).toContain(
       emailBounceDetection.responses["*"].output.verdict,

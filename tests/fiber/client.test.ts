@@ -76,6 +76,15 @@ describe("error mapping", () => {
     expect(isRetryable(e)).toBe(false);
   });
 
+  it("treats 501 as terminal — a sandbox key returns it and retrying cannot help", () => {
+    const e = fiberErrorFromResponse(501, {
+      message: "Sandbox mode is not yet available for this endpoint.",
+    });
+    expect(e.retryable).toBe(false);
+    expect(e.code).toBe("not_implemented");
+    expect(isRetryable(e)).toBe(false);
+  });
+
   it("prefers Fiber's own errorCode and message from the body", () => {
     const e = fiberErrorFromResponse(400, {
       errorCode: "INVALID_COMPANY_IDENTIFIER",
