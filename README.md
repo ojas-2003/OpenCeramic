@@ -1,36 +1,312 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# OpenCeramic
 
-## Getting Started
+An open-source, Clay-style enrichment spreadsheet built entirely on
+[Fiber AI](https://api.fiber.ai). A table has rows and columns; **enrichment
+columns declare their inputs as mappings to other columns**, which makes the
+table a DAG. A run is planned synchronously — topological sort, cell statuses,
+credit estimate — and executed by a durable Inngest function that walks the
+graph level by level, dispatching cells to adapters in chunks with caching,
+retries and partial-failure semantics.
 
-First, run the development server:
+The spreadsheet is only the rendering. The engine is the thing.
+
+**Live URL:** _(not yet deployed — see [Deploying](#deploying))_
+
+![The demo table mid-chain: Website → Resolve company → Revenue / Find CEO → Reveal contact → Validate email / Social handles](docs/images/grid.png)
+
+## Try it in 60 seconds
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+pnpm install
+cp .env.example .env.local     # set DATABASE_URL; FIBER_FAKE=1 is the default
+pnpm db:migrate
+pnpm inngest:dev               # terminal 1 (Docker)
+pnpm dev                       # terminal 2
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Then at <http://localhost:3000>:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. **Load demo table** — 25 SaaS companies, six enrichment columns, four DAG levels
+2. **Run table** — you get a price first: *"Run 150 cells (0 cached) · est. 425 credits · balance 4,900"*. Nothing is spent until you confirm.
+3. **Click any cell** — full JSON, plus provenance: credits, latency, cache hit, and the `api_call_id` of the exact request behind the value.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Then press **Run table** again. It costs **0 credits** and finishes instantly —
+everything is cached.
 
-## Learn More
+The amber ⊘ column is not a bug. `Reveal contact` found nothing for those
+profiles, so `Validate email` **skipped with a stated reason** rather than
+failing on a null email or leaving a silent blank. That distinction is the point
+of the engine.
 
-To learn more about Next.js, take a look at the following resources:
+## Architecture
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```mermaid
+flowchart LR
+  subgraph Browser
+    Grid[Grid UI<br/>TanStack Table + Query]
+  end
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+  subgraph Vercel["Vercel (Next.js)"]
+    API[Route handlers<br/>/api/tables, /columns, /runs]
+    Planner[Run Planner<br/>DAG resolve → cell jobs]
+    Registry[Enrichment Registry<br/>enrichments/*.ts]
+    InngestFn[Inngest function<br/>execute-run]
+  end
 
-## Deploy on Vercel
+  subgraph Inngest["Inngest (durable execution)"]
+    Queue[(events + steps<br/>retries, concurrency)]
+  end
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+  subgraph Data["Neon Postgres"]
+    DB[(tables · columns · rows<br/>cells · runs · cache · api_calls)]
+  end
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+  Fiber[(Fiber AI API)]
+
+  Grid -- REST + polling --> API
+  API --> Planner --> DB
+  Planner -- run.requested --> Queue
+  Queue --> InngestFn
+  InngestFn --> Registry --> Fiber
+  InngestFn --> DB
+```
+
+**The planner** ([src/engine/planner.ts](src/engine/planner.ts)) builds an edge
+list from every column's `config.inputs`, Kahn-sorts it into levels, decides
+which cells to touch (`done` cells are left alone unless `force`), prices the
+run against the cache in **one** lookup, and refuses anything over
+`MAX_CREDITS_PER_RUN` **before writing a single row** — so a rejected plan leaves
+no trace. `topoSortLevels` and `downstreamOf` are pure functions with no database
+in sight.
+
+**The executor** ([src/engine/executor.ts](src/engine/executor.ts)) is a thin
+Inngest wrapper. Levels run in sequence because each consumes what the last
+produced; columns inside a level run together because the planner proved they are
+independent. All the logic lives in
+[src/engine/process.ts](src/engine/process.ts) as pure functions — which is why
+**all 43 executor tests run with no database and no Inngest harness**.
+
+Cells are chunked (10 per step for sync, `batchSize` for batch) because Inngest
+caps steps per run and one step per cell would blow that on a 200×4 table. Async
+adapters get one durable step per `start` and per `poll`, with `step.sleep`
+between, so a poll loop survives a redeploy.
+
+**The cell is the job record.** Its primary key is `(row_id, column_id)`, so
+every write is an upsert and a redelivered event is harmless. There is no jobs
+table.
+
+## Add an enrichment in 30 lines
+
+This is [`src/enrichments/fiber.email.validate.ts`](src/enrichments/fiber.email.validate.ts),
+complete and unedited:
+
+```ts
+const inputs = z.object({ email: z.string().min(1) });
+const output = z.object({ deliverable: z.boolean(), status: z.string() });
+
+export const fiberEmailValidate: Enrichment<Input, Output> = {
+  id: "fiber.email.validate",
+  version: 1,
+  label: "Validate email",
+  description: "Check whether an email address is deliverable before you send to it.",
+  entity: "any",
+  mode: "sync",
+  inputs,
+  output,
+  outputFields: [
+    { key: "deliverable", label: "Deliverable", type: "string" },
+    { key: "status", label: "Status", type: "string" },
+  ],
+  estimateCredits: () => 1,
+  cacheKey: (input) => `fiber.email.validate:1:${normalizeEmail(input.email)}`,
+
+  async run(input, ctx) {
+    const { data } = await ctx.fiber.call("/v1/validate-email/single", "post", {
+      email: normalizeEmail(input.email),
+    });
+    const result = data.output;
+    return { deliverable: result.verdict === "ok", status: result.verdict };
+  },
+};
+```
+
+Plus one line in [`src/enrichments/index.ts`](src/enrichments/index.ts):
+
+```ts
+register(fiberEmailValidate);
+```
+
+That is the whole integration. **`src/engine/**` never imports an adapter** —
+it resolves them through the registry, and a script asserts that. The registry
+also validates at *register* time that the declared `mode` matches exactly the
+methods implemented (`sync`→`run`, `batch`→`runBatch`, `async`→`start`+`poll`),
+so a mismatch is a boot crash rather than a cell that fails halfway through a
+paid run.
+
+The add-column picker needs no wiring either: it probes the Zod schema to learn
+which inputs are required and what they accept, so a new adapter's UI is correct
+the day it lands.
+
+### The six shipped adapters
+
+| Adapter | Mode | Fiber operation | Credits |
+|---|---|---|---|
+| `fiber.company.kitchenSink` | sync | `kitchenSinkCompany` | 2 |
+| `fiber.company.revenue` | sync | `getCompanyRevenue` | 4 |
+| `fiber.people.findAtCompany` | sync | `peopleSearch` | 1 |
+| `fiber.contact.reveal` | **batch** | `startBatchContactDetails` + poll | 5 |
+| `fiber.email.validate` | sync | `emailBounceDetection` | 1 |
+| `fiber.social.handles` | **async** | `socialMediaLookupTrigger` + poll | 6 |
+
+All three run modes, and they chain: the demo table is four levels deep.
+
+## Failure semantics
+
+The difference between these four is the thing most enrichment tools get wrong.
+
+| Cell state | Means | Example |
+|---|---|---|
+| `done`, value | The adapter returned data | A LinkedIn URL was resolved |
+| `done`, **`value: null`** | Fiber looked and **found nothing** | No contact exists for that profile |
+| `failed` | The call itself failed terminally | 400 bad input, 402 out of credits |
+| `skipped` | An **input** was unusable, so this never ran | Upstream failed, was skipped, or was empty |
+
+"No data found" is a **success**, not a failure — otherwise every unfindable
+email looks like a bug. And a skipped cell records *why*:
+
+```json
+{ "skipped_because": { "column_id": "…", "reason": "source value is empty" } }
+```
+
+**Retryable vs terminal:** 429, 5xx, network and timeout are retried (3 attempts,
+1s/4s/10s backoff). Every 4xx is terminal, including 402 — hammering a drained
+account helps nobody. 501 is terminal too, which we learned the hard way: Fiber
+returns it for endpoints sandbox does not cover, and retrying burned three
+attempts per cell.
+
+A single cell's error **never escapes its chunk**. The only thing allowed to
+propagate out of a step is infrastructure failure, because that is the only case
+where retrying the whole step is right.
+
+## Caching and idempotency
+
+- **Cache key** = `id:version:normalized(inputs)`, so `https://www.Acme.com/`
+  and `acme.com` are one lookup. The version pins the adapter contract, so a
+  changed output shape cannot serve stale values.
+- **Null results are cached** — you should not pay twice to rediscover the same
+  absence.
+- **The API key is excluded from the request hash**, so the same lookup under a
+  different key still collapses to one entry.
+- **Every cell write is an upsert on `(row_id, column_id)`.** A redelivered
+  Inngest event rewrites the same row.
+- **Runs resume.** A default run only touches non-`done` cells. This is not
+  theoretical: a mid-run crash during development left 75 of 150 cells pending,
+  and re-running planned exactly those 75.
+- **`actual_credits` is summed from `api_calls`**, deduplicated by id — not from
+  provenance, so a cell written twice is not billed twice.
+
+## Design decisions
+
+| Decision | Choice | Why | Rejected |
+|---|---|---|---|
+| Execution | **Inngest** | Vercel functions time out; 200×4 is 800 calls over minutes. Durable steps, retries, per-key concurrency, `step.sleep` for polling. | A Postgres `SKIP LOCKED` queue drained by a self-reinvoking route — understood, but fragile on serverless and ~3 hours of plumbing that is not the interesting part. |
+| Source of truth | **Postgres, cells as rows** | Status must survive crashes and be queryable ("all failed cells in column X"). JSONB values keep the schema stable as output shapes vary. | One JSON blob per table — trivial to read, impossible to update from 800 concurrent workers. |
+| Client updates | **Poll every 1.5s** | One endpoint, one query, no infrastructure. Runs take minutes; sub-second latency buys nothing. | SSE/Realtime — nicer, but a demo that flakes on WebSockets is worse than one that polls. |
+| Fiber client | **Types generated from `openapi.json`** | End-to-end typed, drift-proof. | Hand-written DTOs. |
+| Grid | **TanStack Table + Virtual** | Headless and virtualized; 202 rows render as 34 DOM nodes. | AG Grid — heavier, license friction. |
+
+## Running locally
+
+| Variable | Purpose |
+|---|---|
+| `DATABASE_URL` | Neon connection string |
+| `FIBER_API_KEY` | Server-only. Never exposed to the browser, never in a `NEXT_PUBLIC_*` var. |
+| `FIBER_FAKE` | `1` serves recorded fixtures instead of the live API |
+| `INNGEST_DEV` | `1` points the SDK at the local dev server |
+| `MAX_CREDITS_PER_RUN` | Plans above this are refused before anything is written |
+| `CACHE_TTL_SECONDS` | Default 7 days |
+
+```bash
+pnpm dev            # app on :3000
+pnpm inngest:dev    # Inngest dev server on :8288, in Docker
+pnpm test           # 177 tests, ~0.5s
+pnpm typecheck
+pnpm build
+pnpm db:migrate     # apply migrations
+pnpm db:seed        # demo table from the CLI
+pnpm db:studio      # browse the database
+```
+
+**On API keys.** Fiber issues sandbox keys (`sk_test_…`) self-serve via
+`createSandboxApiKey` (`POST /v1/api-keys/create-sandbox`), and they never charge
+credits. **They currently return 501 for four of the six operations this project
+uses**, including `kitchenSinkCompany` — which is why `FIBER_FAKE=1` is the
+default. Set it to `0` with a live `sk_live_` key.
+
+## Deploying
+
+**Vercel**
+
+1. Import the repo. Framework preset: Next.js. Build `pnpm build`.
+2. Environment variables: `DATABASE_URL`, `FIBER_API_KEY`, `FIBER_BASE_URL`,
+   `MAX_CREDITS_PER_RUN`, `CACHE_TTL_SECONDS`. **Do not** set `INNGEST_DEV` or
+   `FIBER_FAKE=1` in production.
+3. Run `pnpm db:migrate` against the production `DATABASE_URL` once.
+
+**Inngest Cloud**
+
+1. Add the Inngest integration from the Vercel marketplace, or set
+   `INNGEST_EVENT_KEY` and `INNGEST_SIGNING_KEY` by hand from the Inngest
+   dashboard.
+2. Sync the app at `https://<your-app>.vercel.app/api/inngest`.
+3. Confirm `execute-run` appears in the Inngest dashboard.
+
+Verify by loading the demo table on production and running it.
+
+## Tests
+
+**177 tests, no database, no network, no Inngest harness.** They run in about
+half a second.
+
+| Area | Covers |
+|---|---|
+| `tests/engine/planner.test.ts` | Topological levels, diamonds, cycles, scope, `force`, cache exclusion, over-budget, and that a refused plan writes nothing |
+| `tests/engine/executor.test.ts` | Cache hits, skip reasons, retry-then-succeed, terminal errors, null results, batch positional mapping, async poll timeout, concurrency limits, dotted input resolution |
+| `tests/enrichments/contract.test.ts` | Every adapter: unique `fiber.*` id, mode matches implemented methods, output parses, cache keys stable under normalisation, estimates match fixture charges |
+| `tests/fiber/*` | Request hashing stable across key order, error taxonomy, credit extraction, fixtures typechecked against the generated OpenAPI types |
+| `tests/api/columns.test.ts` | Column validation: bad adapter, wrong entity, unmapped input, unknown source, self-reference, cycle |
+
+The engine is testable because dependencies are injected: the planner takes
+`{ db, registry, cacheLookup }`, and the executor's core takes
+`{ fiber, cache, logger }`. Swapping in a fake client and an in-memory cache is
+the whole setup.
+
+## What I would do next
+
+- **Webhook completion** for async endpoints instead of polling
+- **Trackers / Saved Search as auto-refreshing row sources** — new prospects
+  appear and enrich themselves
+- **Formula and AI columns**; conditional runs ("only enrich if revenue > $10M")
+- **`KitchenSinkProfile` resolving a person from an email alone**, so a table
+  seeded with only email addresses can run the whole chain
+- **Multi-tenant auth**, per-org keys and credit budgets
+- **A Postgres `SKIP LOCKED` worker** as an Inngest-free mode for self-hosters
+
+## Known gaps
+
+Stated plainly, because a reviewer will find them:
+
+- **Four of six fixtures have never been checked against a live response.**
+  Sandbox returns 501 for them. The one fixture that *could* be verified
+  (`peopleSearch`) had three invented field names, so assume the others are
+  wrong until a live key proves otherwise. Response *shapes* are typechecked
+  against `openapi.json`; the values are not.
+- **`/api/account` cannot show a real balance on a sandbox key** — both
+  endpoints 501. It degrades to `null` with the reason attached.
+- **The Inngest wrapper has no automated test.** Its logic lives in tested pure
+  functions, and it has been exercised by many real runs, but the wrapper itself
+  is verified manually.
+- **"Load demo table" creates a new table each click** rather than reusing one.
+
+The per-step build log in [docs/steps/](docs/steps/) records every design
+decision, every deviation from the plan, and every bug found along the way.

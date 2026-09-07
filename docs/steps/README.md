@@ -20,7 +20,7 @@ The guide owns the contracts; these documents own the reasoning.
 | 9 | [Grid UI](step-09-grid-ui.md) | `6b8ff31` | done |
 | 10 | [Add column, run confirmation, cell mapping](step-10-mapping-and-confirmation.md) | `fd078f3` | done |
 | 11 | [Import, export, demo seed, polish](step-11-import-export-seed.md) | `d36a7c9` | done |
-| 12 | README, deploy, final check | — | next |
+| 12 | [README, deploy, final check](step-12-readme-and-deploy.md) | `pending` | done |
 
 🔒 marks a step whose interfaces are fixed by the guide and must not be reshaped
 by later steps.
