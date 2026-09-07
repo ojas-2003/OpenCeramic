@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 
 import { createTable, listTables } from "@/db/queries";
-import { apiError, handle, parseBody } from "@/lib/api";
+import { handle, parseBody } from "@/lib/api";
 
 const createSchema = z.object({
   name: z.string().min(1).max(200),
@@ -21,5 +21,3 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ table }, { status: 201 });
   });
 }
-
-export { apiError };
