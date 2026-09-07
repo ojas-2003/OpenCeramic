@@ -13,6 +13,14 @@ import { FakeFiberClient } from "@/fiber/fake";
  */
 const EXAMPLE_INPUTS: Record<string, unknown> = {
   "fiber.company.kitchenSink": { domain: "stripe.com" },
+  "fiber.company.revenue": { linkedin_url: "https://www.linkedin.com/company/stripe" },
+  "fiber.people.findAtCompany": {
+    company_linkedin_url: "https://www.linkedin.com/company/stripe",
+    title_query: "CEO OR Founder",
+  },
+  "fiber.contact.reveal": { linkedin_url: "https://www.linkedin.com/in/patrickcollison" },
+  "fiber.email.validate": { email: "patrick@stripe.com" },
+  "fiber.social.handles": { linkedin_url: "https://www.linkedin.com/in/patrickcollison" },
 };
 
 const adapters = list();
@@ -23,8 +31,16 @@ const ctx = () => ({
 });
 
 describe("adapter contract", () => {
-  it("registers at least one adapter", () => {
-    expect(adapters.length).toBeGreaterThan(0);
+  it("registers all six adapters across all three run modes", () => {
+    expect(adapters.map((a) => a.id).sort()).toEqual([
+      "fiber.company.kitchenSink",
+      "fiber.company.revenue",
+      "fiber.contact.reveal",
+      "fiber.email.validate",
+      "fiber.people.findAtCompany",
+      "fiber.social.handles",
+    ]);
+    expect(new Set(adapters.map((a) => a.mode))).toEqual(new Set(["sync", "batch", "async"]));
   });
 
   it("has an example input for every registered adapter", () => {

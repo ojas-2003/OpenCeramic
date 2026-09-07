@@ -1,4 +1,9 @@
 import { fiberCompanyKitchenSink } from "@/enrichments/fiber.company.kitchenSink";
+import { fiberCompanyRevenue } from "@/enrichments/fiber.company.revenue";
+import { fiberContactReveal } from "@/enrichments/fiber.contact.reveal";
+import { fiberEmailValidate } from "@/enrichments/fiber.email.validate";
+import { fiberPeopleFindAtCompany } from "@/enrichments/fiber.people.findAtCompany";
+import { fiberSocialHandles } from "@/enrichments/fiber.social.handles";
 import { register } from "@/enrichments/registry";
 
 /**
@@ -13,6 +18,11 @@ function registerAll(): void {
   registered = true;
 
   register(fiberCompanyKitchenSink);
+  register(fiberCompanyRevenue);
+  register(fiberPeopleFindAtCompany);
+  register(fiberContactReveal);
+  register(fiberEmailValidate);
+  register(fiberSocialHandles);
 }
 
 registerAll();
