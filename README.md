@@ -1,5 +1,7 @@
 # OpenCeramic
 
+[![CI](https://github.com/ojas-2003/OpenCeramic/actions/workflows/ci.yml/badge.svg)](https://github.com/ojas-2003/OpenCeramic/actions/workflows/ci.yml)
+
 An open-source, Clay-style enrichment spreadsheet built entirely on
 [Fiber AI](https://api.fiber.ai). A table has rows and columns; **enrichment
 columns declare their inputs as mappings to other columns**, which makes the
@@ -10,7 +12,44 @@ retries and partial-failure semantics.
 
 The spreadsheet is only the rendering. The engine is the thing.
 
-**Live URL:** _(not yet deployed — see [Deploying](#deploying))_
+**Live demo:** https://open-ceramic-test.vercel.app
+
+### The demo runs on recorded fixtures, and here is why
+
+Fiber issues sandbox keys (`sk_test_…`) self-serve, and they never charge
+credits. Probed with valid request bodies, **five of the six operations this
+project needs return 501**:
+
+```
+POST /v1/kitchen-sink/company
+{"message":"Sandbox mode is not yet available for this endpoint."}
+```
+
+Only `peopleSearch` responds, and it returns synthetic data. So the deployed demo
+runs with `FIBER_FAKE=1`, serving responses recorded from `openapi.json`-typed
+fixtures.
+
+**What that does and does not mean.** The DAG resolution, level ordering,
+caching, retry/backoff, credit accounting, skip semantics and durable execution
+are all real and all exercised — only the HTTP responses are recorded. The
+adapters call the live endpoints unchanged; see
+[`fiber.email.validate.ts`](src/enrichments/fiber.email.validate.ts), which is
+34 lines and hits `POST /v1/validate-email/single`. One environment variable
+flips it:
+
+```bash
+FIBER_FAKE=0   # with a live sk_live_ key
+```
+
+The honest residual risk is **field mapping**: my adapters read
+`preferred_name`, `linkedin_primary_slug` and so on out of `kitchenSinkCompany`'s
+83-field response, chosen from the OpenAPI schema without ever seeing a live
+payload. When I *could* check one against the real API — `peopleSearch` — I had
+invented three of its field names (`full_name`/`linkedin_url`/`location_name`
+where the API returns `name`/`url`/`locality`), and I rebuilt that fixture from a
+recorded response. Assume the other five are similarly wrong until a live key
+proves otherwise. It is a one-line change per adapter, and it touches no engine,
+planner or schema code.
 
 ![The demo table mid-chain: Website → Resolve company → Revenue / Find CEO → Reveal contact → Validate email / Social handles](docs/images/grid.png)
 
@@ -205,6 +244,15 @@ where retrying the whole step is right.
 - **`actual_credits` is summed from `api_calls`**, deduplicated by id — not from
   provenance, so a cell written twice is not billed twice.
 
+**On atomicity, deliberately.** `drizzle-orm/neon-http` speaks Neon's HTTP
+protocol, which has no interactive transactions, so `upsertCells` is *not* atomic
+across a batch: a chunk of 500 can partially apply. That is a considered trade,
+not an oversight. Because every write is an upsert keyed on
+`(row_id, column_id)`, a partial batch is not corruption — it is a subset of the
+work, and the next run re-plans exactly the cells that did not land. Choosing
+`neon-http` over the WebSocket driver keeps cold starts low on serverless, which
+matters more here than atomicity the cell key already makes unnecessary.
+
 ## Design decisions
 
 | Decision | Choice | Why | Rejected |
@@ -237,24 +285,10 @@ pnpm db:seed        # demo table from the CLI
 pnpm db:studio      # browse the database
 ```
 
-**On API keys.** Fiber issues sandbox keys (`sk_test_…`) self-serve via
-`createSandboxApiKey` (`POST /v1/api-keys/create-sandbox`), and they never charge
+**On API keys.** See [the note above](#the-demo-runs-on-recorded-fixtures-and-here-is-why)
+on sandbox coverage and `FIBER_FAKE`. Sandbox keys come from
+`createSandboxApiKey` (`POST /v1/api-keys/create-sandbox`) and never charge
 credits.
-
-**Sandbox mode currently covers only one of the six operations this project
-uses.** Probed with valid request bodies, every other endpoint returns:
-
-```
-501  Sandbox mode is not yet available for this endpoint.
-```
-
-Only `peopleSearch` responds, and it returns synthetic data ("Jane Doe",
-`jane-doe-sandbox`) with `chargeInfo: {"method":"free"}`. That is why
-`FIBER_FAKE=1` is the default. Set it to `0` with a live `sk_live_` key.
-
-Note that body validation runs *before* the sandbox gate, so probing an endpoint
-with an incomplete body returns `400 body/x Required` and looks reachable. Only a
-valid body reveals the 501.
 
 ## Deploying
 

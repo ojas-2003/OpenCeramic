@@ -1,0 +1,27 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # No DATABASE_URL and no FIBER_API_KEY on purpose: the engine takes its
+      # dependencies as arguments, so the whole suite runs without either.
+      - run: pnpm typecheck
+      - run: pnpm test
+      - run: pnpm build
