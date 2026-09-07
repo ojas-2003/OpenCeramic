@@ -1,4 +1,4 @@
-import { and, asc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
+import { and, asc, desc, eq, getTableColumns, gt, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import {
@@ -12,9 +12,12 @@ import {
   type Column,
   type NewCell,
   type NewRun,
+  type NewColumn,
   type Row,
   type Run,
   type Table,
+  type EntityType,
+  type ColumnConfig,
 } from "@/db/schema";
 
 export type TableWithData = {
@@ -149,4 +152,144 @@ export async function sumCreditsForApiCalls(apiCallIds: string[]): Promise<numbe
     .from(apiCalls)
     .where(inArray(apiCalls.id, apiCallIds));
   return row?.total ?? 0;
+}
+
+/* ------------------------------------------------------------------ */
+/* Tables                                                              */
+/* ------------------------------------------------------------------ */
+
+export async function createTable(name: string, entityType: EntityType): Promise<Table> {
+  const [table] = await db.insert(tables).values({ name, entityType }).returning();
+  return table;
+}
+
+export async function listTables(): Promise<Table[]> {
+  return db.select().from(tables).orderBy(desc(tables.createdAt));
+}
+
+export async function deleteTable(tableId: string): Promise<boolean> {
+  const deleted = await db.delete(tables).where(eq(tables.id, tableId)).returning({ id: tables.id });
+  return deleted.length > 0;
+}
+
+export async function getTable(tableId: string): Promise<Table | null> {
+  const [table] = await db.select().from(tables).where(eq(tables.id, tableId));
+  return table ?? null;
+}
+
+/* ------------------------------------------------------------------ */
+/* Columns                                                             */
+/* ------------------------------------------------------------------ */
+
+export async function getColumn(columnId: string): Promise<Column | null> {
+  const [column] = await db.select().from(columns).where(eq(columns.id, columnId));
+  return column ?? null;
+}
+
+export async function listColumns(tableId: string): Promise<Column[]> {
+  return db.select().from(columns).where(eq(columns.tableId, tableId)).orderBy(asc(columns.position));
+}
+
+/** Creates the column and an idle cell for every existing row, in one go. */
+export async function createColumn(column: NewColumn): Promise<Column> {
+  const [created] = await db.insert(columns).values(column).returning();
+
+  const tableRows = await db
+    .select({ id: rows.id })
+    .from(rows)
+    .where(eq(rows.tableId, created.tableId));
+
+  if (tableRows.length > 0) {
+    await upsertCells(
+      tableRows.map((r) => ({ rowId: r.id, columnId: created.id, status: "idle" as const })),
+    );
+  }
+  return created;
+}
+
+export async function updateColumn(
+  columnId: string,
+  patch: { name?: string; config?: ColumnConfig },
+): Promise<Column | null> {
+  const [updated] = await db
+    .update(columns)
+    .set(patch)
+    .where(eq(columns.id, columnId))
+    .returning();
+  return updated ?? null;
+}
+
+export async function deleteColumn(columnId: string): Promise<boolean> {
+  const deleted = await db
+    .delete(columns)
+    .where(eq(columns.id, columnId))
+    .returning({ id: columns.id });
+  return deleted.length > 0;
+}
+
+export async function nextColumnPosition(tableId: string): Promise<number> {
+  const [row] = await db
+    .select({ max: sql<number>`coalesce(max(${columns.position}), -1)::int` })
+    .from(columns)
+    .where(eq(columns.tableId, tableId));
+  return (row?.max ?? -1) + 1;
+}
+
+/* ------------------------------------------------------------------ */
+/* Rows                                                               */
+/* ------------------------------------------------------------------ */
+
+/**
+ * Appends rows. Input columns get a done cell carrying the supplied text;
+ * enrichment columns get an idle cell so the grid has something to render.
+ */
+export async function createRows(
+  tableId: string,
+  incoming: Array<Record<string, string>>,
+): Promise<Row[]> {
+  if (incoming.length === 0) return [];
+
+  const tableColumns = await listColumns(tableId);
+  const [maxRow] = await db
+    .select({ max: sql<number>`coalesce(max(${rows.position}), -1)::int` })
+    .from(rows)
+    .where(eq(rows.tableId, tableId));
+  const start = (maxRow?.max ?? -1) + 1;
+
+  const created = await db
+    .insert(rows)
+    .values(incoming.map((_, i) => ({ tableId, position: start + i })))
+    .returning();
+
+  const values: NewCell[] = [];
+  for (const [i, row] of created.entries()) {
+    for (const column of tableColumns) {
+      if (column.kind === "input") {
+        const raw = incoming[i][column.name];
+        values.push({
+          rowId: row.id,
+          columnId: column.id,
+          status: "done",
+          value: raw === undefined ? null : raw,
+        });
+      } else {
+        values.push({ rowId: row.id, columnId: column.id, status: "idle" });
+      }
+    }
+  }
+  await upsertCells(values);
+
+  return created;
+}
+
+/* ------------------------------------------------------------------ */
+/* Run polling                                                         */
+/* ------------------------------------------------------------------ */
+
+/** Cells this run touched since `since` — the diff the grid polls for. */
+export async function getCellsForRunSince(runId: string, since: Date | null): Promise<Cell[]> {
+  const where = since
+    ? and(eq(cells.runId, runId), gt(cells.updatedAt, since))
+    : eq(cells.runId, runId);
+  return db.select().from(cells).where(where);
 }

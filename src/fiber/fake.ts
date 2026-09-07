@@ -1,4 +1,6 @@
 import emailBounceDetection from "@/fiber/fixtures/emailBounceDetection.json";
+import getOrgCredits from "@/fiber/fixtures/getOrgCredits.json";
+import getRateLimits from "@/fiber/fixtures/getRateLimits.json";
 import getCompanyRevenue from "@/fiber/fixtures/getCompanyRevenue.json";
 import kitchenSinkCompany from "@/fiber/fixtures/kitchenSinkCompany.json";
 import peopleSearch from "@/fiber/fixtures/peopleSearch.json";
@@ -44,6 +46,8 @@ const FIXTURES: FiberFixture[] = [
   emailBounceDetection,
   socialMediaLookupTrigger,
   socialMediaLookupPolling,
+  getOrgCredits,
+  getRateLimits,
 ] as FiberFixture[];
 
 const BY_PATH = new Map(FIXTURES.map((f) => [f.path, f]));

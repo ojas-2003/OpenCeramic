@@ -267,6 +267,8 @@ describe("fixtures", () => {
     expect(listFixtures().map((f) => f.operationId).sort()).toEqual([
       "emailBounceDetection",
       "getCompanyRevenue",
+      "getOrgCredits",
+      "getRateLimits",
       "kitchenSinkCompany",
       "peopleSearch",
       "pollBatchContactDetails",

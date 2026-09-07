@@ -1,0 +1,30 @@
+{
+  "operationId": "getOrgCredits",
+  "path": "/v1/get-org-credits",
+  "method": "get",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "organizationId": "org_01HZY8QK3M4N5P6R7S8T9UVWXY",
+        "subscriptionId": "sub_01HZY8QK3M4N5P6R7S8T9UVWXY",
+        "max": 10000,
+        "used": 5100,
+        "available": 4900,
+        "usagePeriodResetsOn": "2026-10-01T00:00:00.000Z"
+      },
+      "chargeInfo": { "method": "free", "message": "Reading the balance is free." }
+    }
+  },
+  "notFound": {
+    "output": {
+      "organizationId": "org_01HZY8QK3M4N5P6R7S8T9UVWXY",
+      "subscriptionId": "sub_01HZY8QK3M4N5P6R7S8T9UVWXY",
+      "max": 0,
+      "used": 0,
+      "available": 0,
+      "usagePeriodResetsOn": "2026-10-01T00:00:00.000Z"
+    },
+    "chargeInfo": { "method": "free", "message": "Reading the balance is free." }
+  }
+}

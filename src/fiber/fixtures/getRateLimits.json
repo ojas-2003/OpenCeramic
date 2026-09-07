@@ -1,0 +1,25 @@
+{
+  "operationId": "getRateLimits",
+  "path": "/v1/rate-limits",
+  "method": "get",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "rateLimits": [
+          { "method": "POST", "path": "/v1/kitchen-sink/company", "max": 120, "windowSeconds": 60, "isCustom": false },
+          { "method": "POST", "path": "/v1/people-search", "max": 180, "windowSeconds": 60, "isCustom": false },
+          { "method": "POST", "path": "/v1/company-revenue", "max": 120, "windowSeconds": 60, "isCustom": false },
+          { "method": "POST", "path": "/v1/validate-email/single", "max": 300, "windowSeconds": 60, "isCustom": false },
+          { "method": "POST", "path": "/v1/contact-details/batch/start", "max": 30, "windowSeconds": 60, "isCustom": false },
+          { "method": "POST", "path": "/v1/social-media-lookup/trigger", "max": 300, "windowSeconds": 60, "isCustom": false }
+        ]
+      },
+      "chargeInfo": { "method": "free", "message": "Reading rate limits is free." }
+    }
+  },
+  "notFound": {
+    "output": { "rateLimits": [] },
+    "chargeInfo": { "method": "free", "message": "Reading rate limits is free." }
+  }
+}
