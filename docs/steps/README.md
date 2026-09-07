@@ -16,8 +16,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 5 | [Planner](step-05-planner.md) 🔒 | `0c74d8c` | done |
 | 6 | [Executor (Inngest function)](step-06-executor.md) 🔒 | `cdb8e59` | done |
 | 7 | [Remaining adapters](step-07-adapters.md) | `8eacec4` | done |
-| 8 | API routes | — | next |
-| 9 | Grid UI | — | |
+| 8 | [API routes](step-08-api-routes.md) | `9ed4996` | done |
+| 9 | Grid UI | — | next |
 | 10 | Add column, run confirmation, cell mapping | — | |
 | 11 | Import, export, demo seed, polish | — | |
 | 12 | README, deploy, final check | — | |
@@ -52,3 +52,4 @@ by later steps.
 | 6 | `mapWithConcurrency` instead of `p-limit` | Twelve lines versus a new dependency; same bounded concurrency and input ordering |
 | 6 | Inngest v4 two-argument `createFunction` | The guide's three-argument form is the v3 signature |
 | 7 | `contact.reveal` batchSize 25, not Fiber's documented 2000 | runBatch must start and finish inside one Inngest step with a 60s poll budget |
+| 8 | Input-column creation added to the columns route | Without it a table cannot be seeded through the API, so no other route can be exercised |
