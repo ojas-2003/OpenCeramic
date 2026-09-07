@@ -17,8 +17,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 6 | [Executor (Inngest function)](step-06-executor.md) 🔒 | `cdb8e59` | done |
 | 7 | [Remaining adapters](step-07-adapters.md) | `8eacec4` | done |
 | 8 | [API routes](step-08-api-routes.md) | `9ed4996` | done |
-| 9 | Grid UI | — | next |
-| 10 | Add column, run confirmation, cell mapping | — | |
+| 9 | [Grid UI](step-09-grid-ui.md) | `6b8ff31` | done |
+| 10 | Add column, run confirmation, cell mapping | — | next |
 | 11 | Import, export, demo seed, polish | — | |
 | 12 | README, deploy, final check | — | |
 
