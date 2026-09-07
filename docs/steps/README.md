@@ -13,7 +13,7 @@ The guide owns the contracts; these documents own the reasoning.
 | 2 | [Database schema](step-02-schema.md) 🔒 | `653c94c` | done |
 | 3 | [Fiber client + fake client](step-03-fiber-client.md) | `4a7f7b0` | done |
 | 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `e9af2f2` | done |
-| 5 | [Planner](step-05-planner.md) 🔒 | `pending` | done |
+| 5 | [Planner](step-05-planner.md) 🔒 | `0c74d8c` | done |
 | 6 | Executor (Inngest function) 🔒 | — | next |
 | 7 | Remaining adapters | — | |
 | 8 | API routes | — | |
