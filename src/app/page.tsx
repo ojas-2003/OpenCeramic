@@ -15,10 +15,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/components/Toaster";
 import { api } from "@/lib/apiClient";
 
 export default function Home() {
   const queryClient = useQueryClient();
+  const toast = useToast();
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [entity, setEntity] = useState<"company" | "person">("company");
@@ -30,8 +32,23 @@ export default function Home() {
     onSuccess: () => {
       setOpen(false);
       setName("");
+      toast.notify("Table created");
       void queryClient.invalidateQueries({ queryKey: ["tables"] });
     },
+    onError: (e: Error) => toast.fail(e.message),
+  });
+
+  const loadDemo = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/demo", { method: "POST" });
+      if (!response.ok) throw new Error("Could not load the demo table");
+      return (await response.json()) as { table: { id: string }; rows: number };
+    },
+    onSuccess: (r) => {
+      toast.notify(`Demo table loaded with ${r.rows} rows`);
+      void queryClient.invalidateQueries({ queryKey: ["tables"] });
+    },
+    onError: (e: Error) => toast.fail(e.message),
   });
 
   return (
@@ -41,14 +58,22 @@ export default function Home() {
           <h1 className="text-xl font-semibold tracking-tight">OpenCeramic</h1>
           <p className="text-sm text-muted-foreground">Enrichment tables built on Fiber AI.</p>
         </div>
-        <Button onClick={() => setOpen(true)}>New table</Button>
+        <div className="flex items-center gap-2">
+          <Link href="/settings" className="text-sm text-muted-foreground hover:text-foreground">
+            Settings
+          </Link>
+          <Button variant="outline" disabled={loadDemo.isPending} onClick={() => loadDemo.mutate()}>
+            {loadDemo.isPending ? "Loading…" : "Load demo table"}
+          </Button>
+          <Button onClick={() => setOpen(true)}>New table</Button>
+        </div>
       </div>
 
       {tables.isLoading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
 
       {tables.data?.tables.length === 0 ? (
         <p className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No tables yet. Create one to get started.
+          No tables yet. Load the demo table to see the six-column chain, or create your own.
         </p>
       ) : null}
 

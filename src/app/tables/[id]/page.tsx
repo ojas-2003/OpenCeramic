@@ -5,22 +5,26 @@ import { use, useMemo, useState } from "react";
 
 import { AddColumnDialog } from "@/components/grid/AddColumnDialog";
 import { CellSheet } from "@/components/grid/CellSheet";
+import { ImportCsvDialog } from "@/components/grid/ImportCsvDialog";
 import { RunConfirmDialog, type RunRequest } from "@/components/grid/RunConfirmDialog";
 import { Grid } from "@/components/grid/Grid";
 import { TableHeader } from "@/components/grid/TableHeader";
 import { tableKey, useRunPolling, useStartRun } from "@/components/grid/useTableRun";
+import { useToast } from "@/components/Toaster";
 import { api } from "@/lib/apiClient";
 import { cellKey, type Cell } from "@/lib/types";
 
 export default function TablePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tableId } = use(params);
   const queryClient = useQueryClient();
+  const toast = useToast();
 
   const [runId, setRunId] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ rowId: string; columnId: string } | null>(null);
   // Every run is proposed here first and priced before anything is spent.
   const [proposed, setProposed] = useState<RunRequest | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
+  const [importing, setImporting] = useState(false);
 
   const table = useQuery({ queryKey: tableKey(tableId), queryFn: () => api.getTable(tableId) });
   const enrichments = useQuery({ queryKey: ["enrichments"], queryFn: api.enrichments });
@@ -33,11 +37,19 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
 
   const removeColumn = useMutation({
     mutationFn: api.deleteColumn,
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tableKey(tableId) }),
+    onSuccess: () => {
+      toast.notify("Column deleted");
+      void queryClient.invalidateQueries({ queryKey: tableKey(tableId) });
+    },
+    onError: (e: Error) => toast.fail(e.message),
   });
   const renameColumn = useMutation({
     mutationFn: ({ id, name }: { id: string; name: string }) => api.renameColumn(id, name),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: tableKey(tableId) }),
+    onSuccess: () => {
+      toast.notify("Column renamed");
+      void queryClient.invalidateQueries({ queryKey: tableKey(tableId) });
+    },
+    onError: (e: Error) => toast.fail(e.message),
   });
 
   const cellsByKey = useMemo(() => {
@@ -69,6 +81,7 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         starting={pending}
         onRunTable={() => setProposed({ scope: "table", target: { column_ids: [] } })}
         onAddColumn={() => setAddingColumn(true)}
+        onImport={() => setImporting(true)}
       />
 
       {error ? (
@@ -83,7 +96,16 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
 
       {rows.length === 0 ? (
         <Placeholder>
-          No rows yet. Add some with <code className="font-mono">POST /api/tables/{tableId}/rows</code>.
+          <div className="flex flex-col items-center gap-3">
+            <p>This table has no rows yet.</p>
+            <button
+              type="button"
+              onClick={() => setImporting(true)}
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-accent"
+            >
+              Import CSV
+            </button>
+          </div>
         </Placeholder>
       ) : (
         <Grid
@@ -122,6 +144,14 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         tableEntity={table.data.table.entityType}
         columns={columns}
         enrichments={enrichments.data?.enrichments ?? []}
+      />
+
+      <ImportCsvDialog
+        open={importing}
+        onOpenChange={setImporting}
+        tableId={tableId}
+        columns={columns}
+        onDone={toast.notify}
       />
 
       <CellSheet

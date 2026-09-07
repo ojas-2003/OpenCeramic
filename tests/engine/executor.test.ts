@@ -380,6 +380,37 @@ describe("processBatchChunk (batch)", () => {
     expect(outs[1].errorCode).toBe("batch_result_missing");
   });
 
+  it("writes whole credits to the cache, which is an integer column", async () => {
+    const d = deps();
+    const written: number[] = [];
+    const originalSet = d.cache.set.bind(d.cache);
+    d.cache.set = async (key, value, credits, ttl) => {
+      written.push(credits);
+      return originalSet(key, value, credits, ttl);
+    };
+
+    // One charged credit spread across five cells is 0.2 each.
+    const a = adapter({
+      mode: "batch",
+      run: undefined,
+      runBatch: async (inputs, ctx) => {
+        await ctx.fiber.call("/v1/kitchen-sink/company", "post", {});
+        return inputs.map(() => ({ ok: true }));
+      },
+    });
+
+    await processBatchChunk(
+      [1, 2, 3, 4, 5].map((n) => work(`r${n}`, { a: n })),
+      a,
+      d,
+    );
+
+    expect(written.length).toBe(5);
+    for (const credits of written) {
+      expect(Number.isInteger(credits), `wrote ${credits} to an integer column`).toBe(true);
+    }
+  });
+
   it("serves cached cells without including them in the batch call", async () => {
     const d = deps();
     let batched = 0;

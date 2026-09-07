@@ -325,9 +325,13 @@ export async function processBatchChunk(
     }
 
     const latency = Date.now() - startedAt;
-    // Credits are charged for the batch, not per cell; spread them evenly so a
-    // run's actual_credits still reconciles.
+    // Credits are charged for the batch, not per cell; spread them evenly for
+    // per-cell provenance. The run's actual_credits is summed from api_calls,
+    // not from these, so the division does not have to be lossless.
     const perCell = pending.length > 0 ? recorder.credits / pending.length : 0;
+    // enrichment_cache.credits is an integer column, so the share has to be
+    // whole before it is written there.
+    const perCellWhole = Math.round(perCell);
 
     for (const [n, p] of pending.entries()) {
       const result = results[n];
@@ -355,7 +359,7 @@ export async function processBatchChunk(
         latency_ms: latency,
         ...(recorder.apiCallId ? { api_call_id: recorder.apiCallId } : {}),
       };
-      await deps.cache.set(p.key, result ?? null, perCell, ttl);
+      await deps.cache.set(p.key, result ?? null, perCellWhole, ttl);
       outcomes[p.index] = doneOutcome(p.item, result ?? null, provenance);
     }
   }

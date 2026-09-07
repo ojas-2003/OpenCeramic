@@ -99,3 +99,33 @@ export async function cacheLookup(keys: string[]): Promise<Set<string>> {
 export function cacheHitProvenance(entry: CacheEntry): CellProvenance {
   return { cache_hit: true, credits: 0, latency_ms: 0 };
 }
+
+/** For the settings page: how much is cached, and how much of it is stale. */
+export async function cacheStats(): Promise<{ total: number; live: number; expired: number }> {
+  const [{ db }, { enrichmentCache }, { sql }] = await Promise.all([
+    import("@/db/client"),
+    import("@/db/schema"),
+    import("drizzle-orm"),
+  ]);
+
+  const [row] = await db
+    .select({
+      total: sql<number>`count(*)::int`,
+      live: sql<number>`count(*) filter (where ${enrichmentCache.expiresAt} > now())::int`,
+    })
+    .from(enrichmentCache);
+
+  const total = row?.total ?? 0;
+  const live = row?.live ?? 0;
+  return { total, live, expired: total - live };
+}
+
+/** Empties the cache. The next run pays full price. */
+export async function clearCache(): Promise<number> {
+  const [{ db }, { enrichmentCache }] = await Promise.all([
+    import("@/db/client"),
+    import("@/db/schema"),
+  ]);
+  const deleted = await db.delete(enrichmentCache).returning({ key: enrichmentCache.cacheKey });
+  return deleted.length;
+}

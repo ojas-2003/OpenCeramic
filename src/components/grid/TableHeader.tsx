@@ -15,6 +15,7 @@ export function TableHeader({
   runActive,
   onRunTable,
   onAddColumn,
+  onImport,
   starting,
 }: {
   table: Table;
@@ -23,6 +24,7 @@ export function TableHeader({
   runActive: boolean;
   onRunTable: () => void;
   onAddColumn: () => void;
+  onImport: () => void;
   starting: boolean;
 }) {
   const { data: account } = useQuery({
@@ -50,6 +52,15 @@ export function TableHeader({
           <span className="text-xs text-muted-foreground" title="Fiber credit balance">
             {available === null ? "credits —" : `${available.toLocaleString()} credits`}
           </span>
+          <a
+            href={`/api/tables/${table.id}/export`}
+            className="text-xs text-muted-foreground hover:text-foreground"
+          >
+            Export CSV
+          </a>
+          <Button size="sm" variant="outline" onClick={onImport}>
+            Import CSV
+          </Button>
           <Button size="sm" variant="outline" onClick={onAddColumn}>
             Add column
           </Button>
