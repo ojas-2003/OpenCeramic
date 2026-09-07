@@ -15,8 +15,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `e9af2f2` | done |
 | 5 | [Planner](step-05-planner.md) 🔒 | `0c74d8c` | done |
 | 6 | [Executor (Inngest function)](step-06-executor.md) 🔒 | `cdb8e59` | done |
-| 7 | Remaining adapters | — | next |
-| 8 | API routes | — | |
+| 7 | [Remaining adapters](step-07-adapters.md) | `8eacec4` | done |
+| 8 | API routes | — | next |
 | 9 | Grid UI | — | |
 | 10 | Add column, run confirmation, cell mapping | — | |
 | 11 | Import, export, demo seed, polish | — | |
@@ -51,3 +51,4 @@ by later steps.
 | 6 | Pure logic split into `src/engine/process.ts` | Makes `processChunk` readable in isolation and lets all 33 tests run without a database |
 | 6 | `mapWithConcurrency` instead of `p-limit` | Twelve lines versus a new dependency; same bounded concurrency and input ordering |
 | 6 | Inngest v4 two-argument `createFunction` | The guide's three-argument form is the v3 signature |
+| 7 | `contact.reveal` batchSize 25, not Fiber's documented 2000 | runBatch must start and finish inside one Inngest step with a 60s poll budget |
