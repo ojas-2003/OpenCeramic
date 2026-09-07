@@ -38,7 +38,7 @@ export function ColumnMenu({
         <DropdownMenuItem onClick={onRun}>Run column</DropdownMenuItem>
         <DropdownMenuItem onClick={onForceRun}>Force re-run</DropdownMenuItem>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={onEdit}>Rename</DropdownMenuItem>
+        <DropdownMenuItem onClick={onEdit}>Edit mapping…</DropdownMenuItem>
         <DropdownMenuItem variant="destructive" onClick={onDelete}>
           Delete
         </DropdownMenuItem>

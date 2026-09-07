@@ -24,6 +24,7 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
   // Every run is proposed here first and priced before anything is spent.
   const [proposed, setProposed] = useState<RunRequest | null>(null);
   const [addingColumn, setAddingColumn] = useState(false);
+  const [editingColumnId, setEditingColumnId] = useState<string | null>(null);
   const [importing, setImporting] = useState(false);
 
   const table = useQuery({ queryKey: tableKey(tableId), queryFn: () => api.getTable(tableId) });
@@ -118,11 +119,7 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
           onForceColumn={(columnId) =>
             setProposed({ scope: "column", target: { column_ids: [columnId] }, force: true })
           }
-          onRenameColumn={(columnId) => {
-            const current = columns.find((c) => c.id === columnId);
-            const name = window.prompt("Column name", current?.name ?? "");
-            if (name && name !== current?.name) renameColumn.mutate({ id: columnId, name });
-          }}
+          onRenameColumn={(columnId) => setEditingColumnId(columnId)}
           onDeleteColumn={(columnId) => {
             if (window.confirm("Delete this column and its cells?")) removeColumn.mutate(columnId);
           }}
@@ -135,6 +132,16 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         confirming={pending}
         onCancel={() => setProposed(null)}
         onConfirm={(request) => start(request)}
+      />
+
+      <AddColumnDialog
+        open={editingColumnId !== null}
+        onOpenChange={(next) => !next && setEditingColumnId(null)}
+        tableId={tableId}
+        tableEntity={table.data.table.entityType}
+        columns={columns}
+        enrichments={enrichments.data?.enrichments ?? []}
+        editing={columns.find((c) => c.id === editingColumnId) ?? null}
       />
 
       <AddColumnDialog

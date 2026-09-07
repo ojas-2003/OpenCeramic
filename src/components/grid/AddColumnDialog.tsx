@@ -20,6 +20,8 @@ export function AddColumnDialog({
   tableEntity,
   columns,
   enrichments,
+  /** When set, the dialog edits this column's mapping instead of adding one. */
+  editing,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -27,12 +29,24 @@ export function AddColumnDialog({
   tableEntity: "person" | "company";
   columns: Column[];
   enrichments: EnrichmentMeta[];
+  editing?: Column | null;
 }) {
   const queryClient = useQueryClient();
   const [picked, setPicked] = useState<EnrichmentMeta | null>(null);
   const [inputs, setInputs] = useState<Record<string, string>>({});
   const [name, setName] = useState("");
   const [error, setError] = useState<string | null>(null);
+
+  // Editing skips the picker: the adapter is already chosen.
+  const editKey = editing?.id ?? null;
+  const [loadedFor, setLoadedFor] = useState<string | null>(null);
+  if (editing && loadedFor !== editKey) {
+    setLoadedFor(editKey);
+    setPicked(enrichments.find((e) => e.id === editing.enrichmentId) ?? null);
+    setInputs({ ...(editing.config?.inputs ?? {}) });
+    setName(editing.name);
+    setError(null);
+  }
 
   const byId = useMemo(() => new Map(enrichments.map((e) => [e.id, e])), [enrichments]);
   const available = enrichments.filter((e) => e.entity === "any" || e.entity === tableEntity);
@@ -42,11 +56,18 @@ export function AddColumnDialog({
     setInputs({});
     setName("");
     setError(null);
+    setLoadedFor(null);
   };
 
   const create = useMutation({
     mutationFn: async () => {
-      const response = await fetch(`/api/tables/${tableId}/columns`, {
+      const response = editing
+        ? await fetch(`/api/columns/${editing.id}`, {
+            method: "PATCH",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ name: name.trim() || picked!.label, config: { inputs } }),
+          })
+        : await fetch(`/api/tables/${tableId}/columns`, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -81,7 +102,9 @@ export function AddColumnDialog({
     >
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-lg">
         <DialogHeader>
-          <DialogTitle>{picked ? picked.label : "Add enrichment column"}</DialogTitle>
+          <DialogTitle>
+            {editing ? `Edit ${editing.name}` : picked ? picked.label : "Add enrichment column"}
+          </DialogTitle>
           <DialogDescription>
             {picked ? picked.description : `Enrichments available for ${tableEntity} tables.`}
           </DialogDescription>
@@ -114,7 +137,7 @@ export function AddColumnDialog({
         ) : (
           <div className="flex flex-col gap-4">
             {picked.inputs.map((input) => {
-              const options = sourceOptionsFor(input.accepts, columns, byId);
+              const options = sourceOptionsFor(input.accepts, columns, byId, editing?.id);
               const chosen = inputs[input.key];
               return (
                 <div key={input.key}>
@@ -172,18 +195,20 @@ export function AddColumnDialog({
         <DialogFooter>
           {picked ? (
             <>
-              <Button variant="outline" onClick={reset}>
-                Back
+              <Button variant="outline" onClick={() => (editing ? onOpenChange(false) : reset())}>
+                {editing ? "Cancel" : "Back"}
               </Button>
               <Button
                 disabled={missing.length > 0 || create.isPending}
                 onClick={() => create.mutate()}
               >
                 {create.isPending
-                  ? "Adding…"
+                  ? "Saving…"
                   : missing.length > 0
                     ? `Map ${missing.join(", ")}`
-                    : "Add column"}
+                    : editing
+                      ? "Save mapping"
+                      : "Add column"}
               </Button>
             </>
           ) : (
