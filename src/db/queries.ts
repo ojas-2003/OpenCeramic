@@ -1,7 +1,8 @@
-import { and, asc, eq, getTableColumns, sql } from "drizzle-orm";
+import { and, asc, eq, getTableColumns, inArray, sql } from "drizzle-orm";
 
 import { db } from "@/db/client";
 import {
+  apiCalls,
   cells,
   columns,
   rows,
@@ -123,4 +124,29 @@ export async function getPendingCells(
         eq(cells.status, "pending"),
       ),
     );
+}
+
+/** The executor loads the run it was handed by the event. */
+export async function getRun(runId: string): Promise<Run | null> {
+  const [run] = await db.select().from(runs).where(eq(runs.id, runId));
+  return run ?? null;
+}
+
+/** Every cell this run touched, for finalisation and for the polling endpoint. */
+export async function getCellsForRun(runId: string): Promise<Cell[]> {
+  return db.select().from(cells).where(eq(cells.runId, runId));
+}
+
+/**
+ * What the run actually cost: the credits recorded against the api_calls rows
+ * that the run's cells point at. Summing provenance directly would double-count
+ * a cell that was written more than once.
+ */
+export async function sumCreditsForApiCalls(apiCallIds: string[]): Promise<number> {
+  if (apiCallIds.length === 0) return 0;
+  const [row] = await db
+    .select({ total: sql<number>`coalesce(sum(${apiCalls.credits}), 0)::int` })
+    .from(apiCalls)
+    .where(inArray(apiCalls.id, apiCallIds));
+  return row?.total ?? 0;
 }
