@@ -239,9 +239,22 @@ pnpm db:studio      # browse the database
 
 **On API keys.** Fiber issues sandbox keys (`sk_test_…`) self-serve via
 `createSandboxApiKey` (`POST /v1/api-keys/create-sandbox`), and they never charge
-credits. **They currently return 501 for four of the six operations this project
-uses**, including `kitchenSinkCompany` — which is why `FIBER_FAKE=1` is the
-default. Set it to `0` with a live `sk_live_` key.
+credits.
+
+**Sandbox mode currently covers only one of the six operations this project
+uses.** Probed with valid request bodies, every other endpoint returns:
+
+```
+501  Sandbox mode is not yet available for this endpoint.
+```
+
+Only `peopleSearch` responds, and it returns synthetic data ("Jane Doe",
+`jane-doe-sandbox`) with `chargeInfo: {"method":"free"}`. That is why
+`FIBER_FAKE=1` is the default. Set it to `0` with a live `sk_live_` key.
+
+Note that body validation runs *before* the sandbox gate, so probing an endpoint
+with an incomplete body returns `400 body/x Required` and looks reachable. Only a
+valid body reveals the 501.
 
 ## Deploying
 
@@ -296,13 +309,16 @@ the whole setup.
 
 Stated plainly, because a reviewer will find them:
 
-- **Four of six fixtures have never been checked against a live response.**
-  Sandbox returns 501 for them. The one fixture that *could* be verified
-  (`peopleSearch`) had three invented field names, so assume the others are
-  wrong until a live key proves otherwise. Response *shapes* are typechecked
-  against `openapi.json`; the values are not.
+- **Five of six fixtures have never been checked against a live response.**
+  Sandbox mode covers only `peopleSearch`; everything else returns 501. And the
+  one fixture that *could* be verified had three invented field names
+  (`full_name`/`linkedin_url`/`location_name` where the API returns
+  `name`/`url`/`locality`) — so assume the others are wrong until a live key
+  proves otherwise. Response *shapes* are typechecked against `openapi.json`;
+  the values are not.
 - **`/api/account` cannot show a real balance on a sandbox key** — both
-  endpoints 501. It degrades to `null` with the reason attached.
+  `getOrgCredits` and `getRateLimits` return 501. It degrades to `null` with the
+  reason attached.
 - **The Inngest wrapper has no automated test.** Its logic lives in tested pure
   functions, and it has been exercised by many real runs, but the wrapper itself
   is verified manually.

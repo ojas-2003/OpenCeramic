@@ -84,15 +84,16 @@ A sandbox key (`sk_test_…`) was available at this point, so the Fiber layer wa
 exercised against the real API for the first time. Sandbox keys **never charge
 credits**, so this cost nothing.
 
-**Sandbox coverage is partial.** Of the ten operations this project uses:
+**Sandbox coverage is far narrower than this step first concluded.** The initial
+probe used incomplete request bodies, and Fiber validates the body *before*
+checking sandbox availability — so several endpoints answered `400 body/x
+Required` and looked reachable.
 
-| Reachable (400 = bad input) | Not available (501) |
-|---|---|
-| `/v1/people-search` (returned 200) | `/v1/kitchen-sink/company` |
-| `/v1/company-revenue` | `/v1/contact-details/batch/poll` |
-| `/v1/contact-details/batch/start` | `/v1/validate-email/single` |
-| `/v1/social-media-lookup/trigger` | `/v1/social-media-lookup/polling` |
-| | `/v1/get-org-credits`, `/v1/rate-limits` |
+Re-probed with valid bodies (Step 12), **only `/v1/people-search` works**. Every
+other operation returns `501 Sandbox mode is not yet available for this
+endpoint`, including `kitchenSinkCompany`, `getCompanyRevenue`,
+`emailBounceDetection`, `startBatchContactDetails`, `socialMediaLookupTrigger`,
+`getOrgCredits` and `getRateLimits`.
 
 Three consequences:
 
