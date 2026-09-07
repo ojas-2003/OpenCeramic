@@ -18,8 +18,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 7 | [Remaining adapters](step-07-adapters.md) | `8eacec4` | done |
 | 8 | [API routes](step-08-api-routes.md) | `9ed4996` | done |
 | 9 | [Grid UI](step-09-grid-ui.md) | `6b8ff31` | done |
-| 10 | Add column, run confirmation, cell mapping | — | next |
-| 11 | Import, export, demo seed, polish | — | |
+| 10 | [Add column, run confirmation, cell mapping](step-10-mapping-and-confirmation.md) | `fd078f3` | done |
+| 11 | Import, export, demo seed, polish | — | next |
 | 12 | README, deploy, final check | — | |
 
 🔒 marks a step whose interfaces are fixed by the guide and must not be reshaped
