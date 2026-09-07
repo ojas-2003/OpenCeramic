@@ -14,8 +14,8 @@ The guide owns the contracts; these documents own the reasoning.
 | 3 | [Fiber client + fake client](step-03-fiber-client.md) | `4a7f7b0` | done |
 | 4 | [Enrichment interface, registry, first adapter](step-04-enrichment-interface.md) 🔒 | `e9af2f2` | done |
 | 5 | [Planner](step-05-planner.md) 🔒 | `0c74d8c` | done |
-| 6 | Executor (Inngest function) 🔒 | — | next |
-| 7 | Remaining adapters | — | |
+| 6 | [Executor (Inngest function)](step-06-executor.md) 🔒 | `cdb8e59` | done |
+| 7 | Remaining adapters | — | next |
 | 8 | API routes | — | |
 | 9 | Grid UI | — | |
 | 10 | Add column, run confirmation, cell mapping | — | |
@@ -48,3 +48,6 @@ by later steps.
 | 5 | Budget check moved before all writes | The guide's order leaves orphaned `pending` cells pointing at a run that was never created |
 | 5 | Re-planning keeps `value`, clears `provenance` | A failed re-run must not destroy the previous good result |
 | 5 | 501/505 are terminal, not retryable | Fiber returns 501 on sandbox keys; retrying burns three attempts for something that can never succeed |
+| 6 | Pure logic split into `src/engine/process.ts` | Makes `processChunk` readable in isolation and lets all 33 tests run without a database |
+| 6 | `mapWithConcurrency` instead of `p-limit` | Twelve lines versus a new dependency; same bounded concurrency and input ordering |
+| 6 | Inngest v4 two-argument `createFunction` | The guide's three-argument form is the v3 signature |
