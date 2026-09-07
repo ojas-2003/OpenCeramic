@@ -2,7 +2,7 @@
   "operationId": "socialMediaLookupTrigger",
   "path": "/v1/social-media-lookup/trigger",
   "method": "post",
-  "creditCost": 2,
+  "creditCost": 6,
   "responses": {
     "*": {
       "output": {
@@ -10,7 +10,7 @@
       },
       "chargeInfo": {
         "method": "charged-now",
-        "creditsCharged": 2
+        "creditsCharged": 6
       }
     }
   },

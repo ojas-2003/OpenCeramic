@@ -5,6 +5,7 @@ import type { Cell } from "@/db/schema";
 import { MemoryCache } from "@/engine/cache";
 import { toAdapterError } from "@/engine/errors";
 
+import { parseSourceRef, readSourceValue } from "@/engine/sourceRef";
 import {
   chunk,
   countCells,
@@ -118,6 +119,50 @@ describe("resolveCells", () => {
     const out = resolveCells([{ rowId: "r1", columnId: "C" }], config, adapter(), new Map());
     expect(out.blocked[0].provenance.skipped_because?.reason).toBe(
       "source cell has not been created",
+    );
+  });
+
+  it("reads a field out of an enrichment source via the dotted form", () => {
+    const sources = new Map([
+      ["r1:SRC", cell({ value: { linkedin_url: "https://linkedin.com/company/acme", name: "Acme" } })],
+    ]);
+    const out = resolveCells(
+      [{ rowId: "r1", columnId: "C" }],
+      { inputs: { domain: "SRC.linkedin_url" } },
+      adapter(),
+      sources,
+    );
+
+    expect(out.blocked).toHaveLength(0);
+    expect(out.runnable[0].input).toEqual({ domain: "https://linkedin.com/company/acme" });
+  });
+
+  it("skips when the named field is absent or empty", () => {
+    const sources = new Map([["r1:SRC", cell({ value: { name: "Acme", linkedin_url: null } })]]);
+    const out = resolveCells(
+      [{ rowId: "r1", columnId: "C" }],
+      { inputs: { domain: "SRC.linkedin_url" } },
+      adapter(),
+      sources,
+    );
+
+    expect(out.runnable).toHaveLength(0);
+    expect(out.blocked[0].provenance.skipped_because).toEqual({
+      column_id: "SRC",
+      reason: 'source field "linkedin_url" is empty',
+    });
+  });
+
+  it("skips when a dotted mapping points at a scalar source", () => {
+    const sources = new Map([["r1:SRC", cell({ value: "acme.com" })]]);
+    const out = resolveCells(
+      [{ rowId: "r1", columnId: "C" }],
+      { inputs: { domain: "SRC.linkedin_url" } },
+      adapter(),
+      sources,
+    );
+    expect(out.blocked[0].provenance.skipped_because?.reason).toBe(
+      'source value has no field "linkedin_url"',
     );
   });
 
@@ -501,5 +546,46 @@ describe("countCells", () => {
         { status: "pending", provenance: null },
       ]),
     ).toEqual({ total: 5, done: 2, failed: 1, skipped: 1, cache_hits: 1 });
+  });
+});
+
+/* ------------------------------------------------------------------ */
+/* Dotted source references                                            */
+/* ------------------------------------------------------------------ */
+
+describe("parseSourceRef", () => {
+  it("treats a bare id as a whole-cell reference", () => {
+    expect(parseSourceRef("col-1")).toEqual({ columnId: "col-1", field: null });
+  });
+
+  it("splits on the first dot, so field keys may contain dots", () => {
+    expect(parseSourceRef("col-1.linkedin_url")).toEqual({
+      columnId: "col-1",
+      field: "linkedin_url",
+    });
+    expect(parseSourceRef("col-1.a.b")).toEqual({ columnId: "col-1", field: "a.b" });
+  });
+});
+
+describe("readSourceValue", () => {
+  const done = (value: unknown) => cell({ value });
+
+  it("returns the whole value when no field is named", () => {
+    expect(readSourceValue(done("acme.com"), null)).toEqual({ ok: true, value: "acme.com" });
+  });
+
+  it("returns the named field", () => {
+    expect(readSourceValue(done({ a: 1 }), "a")).toEqual({ ok: true, value: 1 });
+  });
+
+  it("rejects an empty string field, which is as useless as null", () => {
+    expect(readSourceValue(done({ a: "" }), "a")).toEqual({
+      ok: false,
+      reason: 'source field "a" is empty',
+    });
+  });
+
+  it("rejects an array source for a field read", () => {
+    expect(readSourceValue(done([1, 2]), "a").ok).toBe(false);
   });
 });

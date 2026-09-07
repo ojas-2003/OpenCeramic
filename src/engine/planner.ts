@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 
 import type { Cell, ColumnConfig, NewCell, NewRun, Run } from "@/db/schema";
 import type { TableWithData } from "@/db/queries";
+import { parseSourceRef, readSourceValue } from "@/engine/sourceRef";
 import type { AnyEnrichment } from "@/enrichments/types";
 
 /* ------------------------------------------------------------------ */
@@ -144,8 +145,9 @@ export function edgesFromColumns(
 ): Edge[] {
   const edges: Edge[] = [];
   for (const column of columns) {
-    for (const sourceColumnId of Object.values(column.config?.inputs ?? {})) {
-      edges.push([sourceColumnId, column.id]);
+    for (const mapping of Object.values(column.config?.inputs ?? {})) {
+      // The edge is to the column; the field after the dot is a value selector.
+      edges.push([parseSourceRef(String(mapping)).columnId, column.id]);
     }
   }
   return edges;
@@ -177,10 +179,11 @@ function resolveInputs(
   const resolved: Record<string, unknown> = {};
   let complete = true;
 
-  for (const [inputKey, sourceColumnId] of Object.entries(config?.inputs ?? {})) {
-    const source = cellByKey.get(cellKey(rowId, sourceColumnId));
-    if (source && source.status === "done" && source.value !== null && source.value !== undefined) {
-      resolved[inputKey] = source.value;
+  for (const [inputKey, mapping] of Object.entries(config?.inputs ?? {})) {
+    const ref = parseSourceRef(String(mapping));
+    const read = readSourceValue(cellByKey.get(cellKey(rowId, ref.columnId)), ref.field);
+    if (read.ok) {
+      resolved[inputKey] = read.value;
     } else {
       complete = false;
     }

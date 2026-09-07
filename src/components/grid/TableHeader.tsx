@@ -14,6 +14,7 @@ export function TableHeader({
   run,
   runActive,
   onRunTable,
+  onAddColumn,
   starting,
 }: {
   table: Table;
@@ -21,6 +22,7 @@ export function TableHeader({
   run: Run | null;
   runActive: boolean;
   onRunTable: () => void;
+  onAddColumn: () => void;
   starting: boolean;
 }) {
   const { data: account } = useQuery({
@@ -48,6 +50,9 @@ export function TableHeader({
           <span className="text-xs text-muted-foreground" title="Fiber credit balance">
             {available === null ? "credits —" : `${available.toLocaleString()} credits`}
           </span>
+          <Button size="sm" variant="outline" onClick={onAddColumn}>
+            Add column
+          </Button>
           <Button size="sm" onClick={onRunTable} disabled={starting || runActive}>
             {runActive ? "Running…" : starting ? "Starting…" : "Run table"}
           </Button>

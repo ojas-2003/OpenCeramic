@@ -147,15 +147,15 @@ describe("validateColumn", () => {
 describe("adapterInputKeys", () => {
   it("marks required and optional inputs for the add-column picker", () => {
     expect(adapterInputKeys(getEnrichment("fiber.people.findAtCompany")!)).toEqual([
-      { key: "company_linkedin_url", required: true },
-      { key: "title_query", required: false },
+      { key: "company_linkedin_url", required: true, accepts: ["string"] },
+      { key: "title_query", required: false, accepts: ["string"] },
     ]);
   });
 
   it("marks every kitchenSink input optional, since it takes domain or name", () => {
     expect(adapterInputKeys(getEnrichment("fiber.company.kitchenSink")!)).toEqual([
-      { key: "domain", required: false },
-      { key: "name", required: false },
+      { key: "domain", required: false, accepts: ["string"] },
+      { key: "name", required: false, accepts: ["string"] },
     ]);
   });
 });

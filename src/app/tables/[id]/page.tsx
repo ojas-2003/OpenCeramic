@@ -3,7 +3,9 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { use, useMemo, useState } from "react";
 
+import { AddColumnDialog } from "@/components/grid/AddColumnDialog";
 import { CellSheet } from "@/components/grid/CellSheet";
+import { RunConfirmDialog, type RunRequest } from "@/components/grid/RunConfirmDialog";
 import { Grid } from "@/components/grid/Grid";
 import { TableHeader } from "@/components/grid/TableHeader";
 import { tableKey, useRunPolling, useStartRun } from "@/components/grid/useTableRun";
@@ -16,12 +18,18 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
 
   const [runId, setRunId] = useState<string | null>(null);
   const [selected, setSelected] = useState<{ rowId: string; columnId: string } | null>(null);
+  // Every run is proposed here first and priced before anything is spent.
+  const [proposed, setProposed] = useState<RunRequest | null>(null);
+  const [addingColumn, setAddingColumn] = useState(false);
 
   const table = useQuery({ queryKey: tableKey(tableId), queryFn: () => api.getTable(tableId) });
   const enrichments = useQuery({ queryKey: ["enrichments"], queryFn: api.enrichments });
 
   const { run, active } = useRunPolling(tableId, runId);
-  const { start, pending, error, clearError } = useStartRun(tableId, setRunId);
+  const { start, pending, error, clearError } = useStartRun(tableId, (id) => {
+    setRunId(id);
+    setProposed(null);
+  });
 
   const removeColumn = useMutation({
     mutationFn: api.deleteColumn,
@@ -59,7 +67,8 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         run={run}
         runActive={active}
         starting={pending}
-        onRunTable={() => start({ scope: "table", target: { column_ids: [] } })}
+        onRunTable={() => setProposed({ scope: "table", target: { column_ids: [] } })}
+        onAddColumn={() => setAddingColumn(true)}
       />
 
       {error ? (
@@ -83,9 +92,9 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
           cells={cellsByKey}
           enrichments={enrichmentsById}
           onCellClick={(rowId, columnId) => setSelected({ rowId, columnId })}
-          onRunColumn={(columnId) => start({ scope: "column", target: { column_ids: [columnId] } })}
+          onRunColumn={(columnId) => setProposed({ scope: "column", target: { column_ids: [columnId] } })}
           onForceColumn={(columnId) =>
-            start({ scope: "column", target: { column_ids: [columnId] }, force: true })
+            setProposed({ scope: "column", target: { column_ids: [columnId] }, force: true })
           }
           onRenameColumn={(columnId) => {
             const current = columns.find((c) => c.id === columnId);
@@ -98,6 +107,23 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         />
       )}
 
+      <RunConfirmDialog
+        tableId={tableId}
+        request={proposed}
+        confirming={pending}
+        onCancel={() => setProposed(null)}
+        onConfirm={(request) => start(request)}
+      />
+
+      <AddColumnDialog
+        open={addingColumn}
+        onOpenChange={setAddingColumn}
+        tableId={tableId}
+        tableEntity={table.data.table.entityType}
+        columns={columns}
+        enrichments={enrichments.data?.enrichments ?? []}
+      />
+
       <CellSheet
         open={selected !== null}
         onOpenChange={(open) => !open && setSelected(null)}
@@ -106,11 +132,12 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         rerunning={pending}
         onRerun={() => {
           if (!selected) return;
-          start({
+          setProposed({
             scope: "cell",
             target: { column_ids: [selected.columnId], row_ids: [selected.rowId] },
             force: true,
           });
+          setSelected(null);
         }}
       />
     </main>

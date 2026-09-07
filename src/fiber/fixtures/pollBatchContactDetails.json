@@ -2,7 +2,7 @@
   "operationId": "pollBatchContactDetails",
   "path": "/v1/contact-details/batch/poll",
   "method": "post",
-  "creditCost": 3,
+  "creditCost": 5,
   "responses": {
     "*": {
       "output": {
@@ -54,7 +54,7 @@
       },
       "chargeInfo": {
         "method": "charged-now",
-        "creditsCharged": 3
+        "creditsCharged": 5
       }
     }
   },

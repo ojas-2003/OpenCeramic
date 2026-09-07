@@ -4,7 +4,7 @@ import "@/enrichments";
 import { normalizeDomain, normalizeEmail, normalizeUrl } from "@/enrichments/normalize";
 import { list } from "@/enrichments/registry";
 import type { AnyEnrichment } from "@/enrichments/types";
-import { FakeFiberClient } from "@/fiber/fake";
+import { FakeFiberClient, getFixture } from "@/fiber/fake";
 
 /**
  * One example input per adapter. A new adapter with no entry here fails the
@@ -137,6 +137,39 @@ async function runOnce(a: AnyEnrichment, input: unknown): Promise<unknown> {
   const polled = await a.poll!(handle, c);
   return polled.state === "done" ? polled.value : null;
 }
+
+/**
+ * The endpoint whose chargeInfo determines what a cell actually costs.
+ * For the async and batch adapters that is the charging call, not the poll.
+ */
+const CHARGING_PATH: Record<string, string> = {
+  "fiber.company.kitchenSink": "/v1/kitchen-sink/company",
+  "fiber.company.revenue": "/v1/company-revenue",
+  "fiber.people.findAtCompany": "/v1/people-search",
+  "fiber.contact.reveal": "/v1/contact-details/batch/poll",
+  "fiber.email.validate": "/v1/validate-email/single",
+  "fiber.social.handles": "/v1/social-media-lookup/trigger",
+};
+
+describe("estimated credits match what the fixtures charge", () => {
+  it("keeps estimateCredits and fixture chargeInfo in step", () => {
+    for (const a of adapters) {
+      const fixture = getFixture(CHARGING_PATH[a.id]);
+      expect(fixture, `no fixture mapped for ${a.id}`).toBeDefined();
+
+      const charge = (fixture!.responses["*"] as {
+        chargeInfo?: { method?: string; creditsCharged?: number };
+      }).chargeInfo;
+
+      // "free" and "charging-later" bill elsewhere, so there is nothing to match.
+      if (charge?.method !== "charged-now") continue;
+
+      expect(charge.creditsCharged, `${a.id}: estimate vs fixture`).toBe(
+        a.estimateCredits(EXAMPLE_INPUTS[a.id]),
+      );
+    }
+  });
+});
 
 /* ------------------------------------------------------------------ */
 /* Cache-key stability                                                 */

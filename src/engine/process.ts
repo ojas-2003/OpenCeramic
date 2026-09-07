@@ -2,6 +2,7 @@ import type { Cell, CellProvenance, ColumnConfig, RunCounts } from "@/db/schema"
 import type { CacheStore } from "@/engine/cache";
 import { cacheTtlSeconds } from "@/engine/cache";
 import { toAdapterError } from "@/engine/errors";
+import { parseSourceRef, readSourceValue } from "@/engine/sourceRef";
 import type { AdapterError, AnyEnrichment, Ctx } from "@/enrichments/types";
 import type { FiberClient } from "@/fiber/client";
 
@@ -75,14 +76,14 @@ export function resolveCells(
     const raw: Record<string, unknown> = {};
     let blocker: { column_id: string; reason: string } | null = null;
 
-    for (const [inputKey, sourceColumnId] of Object.entries(config?.inputs ?? {})) {
-      const source = sourceCells.get(cellKey(cell.rowId, sourceColumnId));
-      const reason = blockingReason(source);
-      if (reason) {
-        blocker = { column_id: sourceColumnId, reason };
+    for (const [inputKey, mapping] of Object.entries(config?.inputs ?? {})) {
+      const ref = parseSourceRef(String(mapping));
+      const read = readSourceValue(sourceCells.get(cellKey(cell.rowId, ref.columnId)), ref.field);
+      if (!read.ok) {
+        blocker = { column_id: ref.columnId, reason: read.reason };
         break;
       }
-      raw[inputKey] = source!.value;
+      raw[inputKey] = read.value;
     }
 
     if (blocker) {
@@ -116,15 +117,6 @@ export function resolveCells(
   }
 
   return { runnable, blocked };
-}
-
-function blockingReason(source: Cell | undefined): string | null {
-  if (!source) return "source cell has not been created";
-  if (source.status === "failed") return "source column failed";
-  if (source.status === "skipped") return "source column was skipped";
-  if (source.status !== "done") return "source column has not run";
-  if (source.value === null || source.value === undefined) return "source value is empty";
-  return null;
 }
 
 /* ------------------------------------------------------------------ */

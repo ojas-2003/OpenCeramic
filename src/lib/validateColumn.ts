@@ -31,17 +31,44 @@ export type ColumnValidationError = {
   details?: Record<string, unknown>;
 };
 
-/** Input keys an adapter declares, and whether each must be mapped. */
-export function adapterInputKeys(adapter: AnyEnrichment): Array<{ key: string; required: boolean }> {
-  const shape = (adapter.inputs as unknown as { shape?: Record<string, { safeParse(v: unknown): { success: boolean } }> })
-    .shape;
+export type InputKeySpec = {
+  key: string;
+  required: boolean;
+  /** Scalar kinds this input will accept, probed from its schema. */
+  accepts: Array<"string" | "number" | "boolean">;
+};
+
+type ProbeSchema = { safeParse(v: unknown): { success: boolean } };
+
+/**
+ * Input keys an adapter declares, whether each must be mapped, and what it
+ * accepts. Everything is probed from the Zod schema rather than declared
+ * separately, so an adapter cannot drift out of sync with its own picker.
+ */
+export function adapterInputKeys(adapter: AnyEnrichment): InputKeySpec[] {
+  const shape = (adapter.inputs as unknown as { shape?: Record<string, ProbeSchema> }).shape;
   if (!shape) return [];
-  return Object.entries(shape).map(([key, schema]) => ({
-    key,
-    // A key that accepts undefined is optional or has a default, so the user
-    // does not have to map a column to it.
-    required: !schema.safeParse(undefined).success,
-  }));
+
+  return Object.entries(shape).map(([key, schema]) => {
+    const accepts: InputKeySpec["accepts"] = [];
+    if (schema.safeParse("probe").success) accepts.push("string");
+    if (schema.safeParse(1).success) accepts.push("number");
+    if (schema.safeParse(true).success) accepts.push("boolean");
+
+    return {
+      key,
+      // A key that accepts undefined is optional or has a default, so the user
+      // does not have to map a column to it.
+      required: !schema.safeParse(undefined).success,
+      accepts,
+    };
+  });
+}
+
+/** An outputField type, reduced to the scalar kind it produces. */
+export function fieldKindOf(type: string): "string" | "number" | "boolean" {
+  if (type === "number") return "number";
+  return "string"; // string, url, email and json all arrive as strings in a chip
 }
 
 export function validateColumn(input: ValidateColumnInput): ColumnValidationError | null {

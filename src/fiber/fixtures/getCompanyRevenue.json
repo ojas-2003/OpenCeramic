@@ -2,7 +2,7 @@
   "operationId": "getCompanyRevenue",
   "path": "/v1/company-revenue",
   "method": "post",
-  "creditCost": 1,
+  "creditCost": 4,
   "responses": {
     "*": {
       "output": {
@@ -24,7 +24,7 @@
       },
       "chargeInfo": {
         "method": "charged-now",
-        "creditsCharged": 1
+        "creditsCharged": 4
       }
     }
   },

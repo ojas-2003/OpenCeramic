@@ -16,7 +16,7 @@ export type EnrichmentMeta = {
   description: string;
   entity: "person" | "company" | "any";
   mode: "sync" | "async" | "batch";
-  inputs: Array<{ key: string; required: boolean }>;
+  inputs: Array<{ key: string; required: boolean; accepts: Array<"string" | "number" | "boolean"> }>;
   outputFields: Array<{ key: string; label: string; type: string }>;
   estimatedCreditsPerRow: number | null;
 };
