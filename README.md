@@ -242,11 +242,25 @@ since the value is a *ranking* that has to collapse into one legible line.
 It also costs one file to add, which is the claim this README makes about the
 adapter interface, demonstrated rather than asserted.
 
-Runners-up worth building next, in order: **Mosaic CSV healing**
-(`startMosaic`/`pollMosaic`) piped through the import dialog, so a messy upload
-is repaired by Fiber before it becomes rows; `getScoutingReport`;
-`getDepartmentSize`; and `stealthFoundersSearch` as a row *source* rather than a
-column.
+### Mosaic: Fiber repairs the CSV before it becomes rows
+
+The import dialog has a second mode. Instead of parsing a clean file in the
+browser, you give it a link to a messy one — CSV, TXT, XLSX or a public Google
+Sheet — and **Fiber Mosaic** (`startMosaic` / `pollMosaic`) normalises headers,
+repairs partial records and resolves mixed identifier types before a single row
+is created. The healed columns become input columns and the chain runs on them.
+
+Two things about it are worth calling out:
+
+- **It is a row source, not an enrichment.** It creates rows rather than filling
+  cells, so it lives in `src/lib/mosaic.ts` rather than behind the `Enrichment`
+  interface — the distinction DESIGN.md §5.2 draws.
+- **It takes a public URL, not an upload.** Fiber fetches the file itself, so
+  this path asks for a link and the plain-file import stays for local CSVs. That
+  is a real constraint of the API, not a shortcut.
+
+Still unbuilt, in the order I would add them: `getScoutingReport`,
+`getDepartmentSize`, and `stealthFoundersSearch` as another row source.
 
 ## Failure semantics
 

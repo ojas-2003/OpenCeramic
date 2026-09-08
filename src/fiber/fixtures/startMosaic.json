@@ -1,0 +1,16 @@
+{
+  "operationId": "startMosaic",
+  "path": "/v1/mosaic/start",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": { "runId": "mosaic_01HZY8QK3M4N5P6R7S8T9UVWXY", "isFreeTrialRun": true },
+      "chargeInfo": { "method": "charging-later", "message": "Charged inside the background job once the file is parsed." }
+    }
+  },
+  "notFound": {
+    "output": { "runId": "mosaic_01HZY8QK3M4N5P6R7S8T9EMPTY", "isFreeTrialRun": false },
+    "chargeInfo": { "method": "charging-later", "message": "Nothing to process." }
+  }
+}

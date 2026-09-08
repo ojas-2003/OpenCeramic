@@ -1,0 +1,59 @@
+{
+  "operationId": "pollMosaic",
+  "path": "/v1/mosaic/poll",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "run": {
+          "runId": "mosaic_01HZY8QK3M4N5P6R7S8T9UVWXY",
+          "status": "done",
+          "rowCount": 4,
+          "processedRowCount": 4,
+          "isFreeTrialRun": true,
+          "stats": {
+            "inputRows": 4,
+            "outputRows": 4,
+            "rowsWhereProfileFound": 3,
+            "rowsWithContactDetails": 2,
+            "rowsWithErrors": 1
+          },
+          "outputCsvUrl": "https://files.fiber.ai/mosaic/sandbox-healed.csv",
+          "reportUrl": "https://files.fiber.ai/mosaic/sandbox-report.html"
+        }
+      },
+      "chargeInfo": { "method": "free", "message": "Polling is free." }
+    },
+    "running": {
+      "output": {
+        "run": {
+          "runId": "mosaic_01HZY8QK3M4N5P6R7S8T9UVWXY",
+          "status": "running",
+          "rowCount": 4,
+          "processedRowCount": 2,
+          "isFreeTrialRun": true,
+          "stats": null,
+          "outputCsvUrl": null,
+          "reportUrl": null
+        }
+      },
+      "chargeInfo": { "method": "free", "message": "Polling is free." }
+    }
+  },
+  "notFound": {
+    "output": {
+      "run": {
+        "runId": "mosaic_01HZY8QK3M4N5P6R7S8T9EMPTY",
+        "status": "failed",
+        "rowCount": 0,
+        "processedRowCount": 0,
+        "isFreeTrialRun": false,
+        "stats": null,
+        "outputCsvUrl": null,
+        "reportUrl": null
+      }
+    },
+    "chargeInfo": { "method": "free", "message": "Polling is free." }
+  }
+}

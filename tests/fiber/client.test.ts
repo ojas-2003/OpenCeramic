@@ -273,9 +273,11 @@ describe("fixtures", () => {
       "kitchenSinkCompany",
       "peopleSearch",
       "pollBatchContactDetails",
+      "pollMosaic",
       "socialMediaLookupPolling",
       "socialMediaLookupTrigger",
       "startBatchContactDetails",
+      "startMosaic",
     ]);
   });
 

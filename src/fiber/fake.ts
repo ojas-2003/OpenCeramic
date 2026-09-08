@@ -5,6 +5,8 @@ import getRateLimits from "@/fiber/fixtures/getRateLimits.json";
 import getCompanyRevenue from "@/fiber/fixtures/getCompanyRevenue.json";
 import kitchenSinkCompany from "@/fiber/fixtures/kitchenSinkCompany.json";
 import peopleSearch from "@/fiber/fixtures/peopleSearch.json";
+import pollMosaic from "@/fiber/fixtures/pollMosaic.json";
+import startMosaic from "@/fiber/fixtures/startMosaic.json";
 import pollBatchContactDetails from "@/fiber/fixtures/pollBatchContactDetails.json";
 import socialMediaLookupPolling from "@/fiber/fixtures/socialMediaLookupPolling.json";
 import socialMediaLookupTrigger from "@/fiber/fixtures/socialMediaLookupTrigger.json";
@@ -50,6 +52,8 @@ const FIXTURES: FiberFixture[] = [
   getOrgCredits,
   getRateLimits,
   getTalentFlow,
+  startMosaic,
+  pollMosaic,
 ] as FiberFixture[];
 
 const BY_PATH = new Map(FIXTURES.map((f) => [f.path, f]));
