@@ -14,6 +14,10 @@ import { FakeFiberClient, getFixture } from "@/fiber/fake";
 const EXAMPLE_INPUTS: Record<string, unknown> = {
   "fiber.company.kitchenSink": { domain: "stripe.com" },
   "fiber.company.revenue": { linkedin_url: "https://www.linkedin.com/company/stripe" },
+  "fiber.company.talentFlow": {
+    linkedin_url: "https://www.linkedin.com/company/stripe",
+    direction: "joiners",
+  },
   "fiber.people.findAtCompany": {
     company_linkedin_url: "https://www.linkedin.com/company/stripe",
     title_query: "CEO OR Founder",
@@ -31,10 +35,11 @@ const ctx = () => ({
 });
 
 describe("adapter contract", () => {
-  it("registers all six adapters across all three run modes", () => {
+  it("registers all seven adapters across all three run modes", () => {
     expect(adapters.map((a) => a.id).sort()).toEqual([
       "fiber.company.kitchenSink",
       "fiber.company.revenue",
+      "fiber.company.talentFlow",
       "fiber.contact.reveal",
       "fiber.email.validate",
       "fiber.people.findAtCompany",
@@ -145,6 +150,7 @@ async function runOnce(a: AnyEnrichment, input: unknown): Promise<unknown> {
 const CHARGING_PATH: Record<string, string> = {
   "fiber.company.kitchenSink": "/v1/kitchen-sink/company",
   "fiber.company.revenue": "/v1/company-revenue",
+  "fiber.company.talentFlow": "/v1/talent-flow",
   "fiber.people.findAtCompany": "/v1/people-search",
   "fiber.contact.reveal": "/v1/contact-details/batch/poll",
   "fiber.email.validate": "/v1/validate-email/single",

@@ -1,5 +1,6 @@
 import { fiberCompanyKitchenSink } from "@/enrichments/fiber.company.kitchenSink";
 import { fiberCompanyRevenue } from "@/enrichments/fiber.company.revenue";
+import { fiberCompanyTalentFlow } from "@/enrichments/fiber.company.talentFlow";
 import { fiberContactReveal } from "@/enrichments/fiber.contact.reveal";
 import { fiberEmailValidate } from "@/enrichments/fiber.email.validate";
 import { fiberPeopleFindAtCompany } from "@/enrichments/fiber.people.findAtCompany";
@@ -19,6 +20,7 @@ function registerAll(): void {
 
   register(fiberCompanyKitchenSink);
   register(fiberCompanyRevenue);
+  register(fiberCompanyTalentFlow);
   register(fiberPeopleFindAtCompany);
   register(fiberContactReveal);
   register(fiberEmailValidate);

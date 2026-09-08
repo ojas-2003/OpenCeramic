@@ -1,0 +1,200 @@
+{
+  "operationId": "getTalentFlow",
+  "path": "/v1/talent-flow",
+  "method": "post",
+  "creditCost": 5,
+  "responses": {
+    "*": {
+      "output": {
+        "direction": "joiners",
+        "company": {
+          "name": "Stripe",
+          "linkedinOrgId": "1441",
+          "domains": [
+            "stripe.com"
+          ],
+          "linkedinSlug": "stripe"
+        },
+        "window": {
+          "after": "2023-01-01",
+          "before": "2026-01-01"
+        },
+        "peopleCount": 1284,
+        "companyBuckets": [
+          {
+            "companyName": "Google",
+            "domain": "google.com",
+            "linkedinOrgId": "1441",
+            "count": 138,
+            "percent": 10.7,
+            "stage": "Public"
+          },
+          {
+            "companyName": "Amazon",
+            "domain": "amazon.com",
+            "count": 96,
+            "percent": 7.5,
+            "stage": "Public"
+          },
+          {
+            "companyName": "Meta",
+            "domain": "meta.com",
+            "count": 74,
+            "percent": 5.8,
+            "stage": "Public"
+          },
+          {
+            "companyName": "Coinbase",
+            "domain": "coinbase.com",
+            "count": 51,
+            "percent": 4.0,
+            "stage": "Public"
+          },
+          {
+            "companyName": "Plaid",
+            "domain": "plaid.com",
+            "count": 43,
+            "percent": 3.3,
+            "stage": "Series D",
+            "totalFundingUsd": 734000000
+          },
+          {
+            "companyName": "Square",
+            "domain": "block.xyz",
+            "count": 38,
+            "percent": 3.0,
+            "stage": "Public"
+          }
+        ],
+        "yearsOfExperience": {
+          "count": 1284,
+          "median": 8.5,
+          "mean": 9.1,
+          "p25": 5,
+          "p75": 12
+        },
+        "tenureMonths": {
+          "count": 1284,
+          "median": 31,
+          "mean": 34.2,
+          "p25": 18,
+          "p75": 46
+        },
+        "breakdowns": {
+          "bySeniority": [
+            {
+              "seniority": "Senior",
+              "count": 512,
+              "percent": 39.9
+            },
+            {
+              "seniority": "Mid-Level",
+              "count": 401,
+              "percent": 31.2
+            }
+          ],
+          "byJobFunction": [
+            {
+              "jobFunction": "Engineering",
+              "count": 703,
+              "percent": 54.8
+            },
+            {
+              "jobFunction": "Sales",
+              "count": 188,
+              "percent": 14.6
+            }
+          ],
+          "byCountry": [
+            {
+              "countryCode": "USA",
+              "countryName": "United States",
+              "count": 1012,
+              "percent": 78.8
+            }
+          ],
+          "byMetro": [
+            {
+              "slug": "san-francisco-bay-area",
+              "name": "San Francisco Bay Area",
+              "count": 604,
+              "percent": 47.0
+            },
+            {
+              "slug": "new-york-city",
+              "name": "New York City Metropolitan Area",
+              "count": 191,
+              "percent": 14.9
+            }
+          ],
+          "bySchool": [
+            {
+              "school": "Stanford University",
+              "count": 88,
+              "percent": 6.9
+            },
+            {
+              "school": "UC Berkeley",
+              "count": 71,
+              "percent": 5.5
+            }
+          ],
+          "byYearsOfExperience": [
+            {
+              "label": "5-10",
+              "count": 561,
+              "percent": 43.7
+            },
+            {
+              "label": "10-15",
+              "count": 337,
+              "percent": 26.2
+            }
+          ]
+        },
+        "generatedAt": "2026-09-08T09:00:00.000Z",
+        "markdownSummary": "## Talent flow into Stripe\n\n1,284 people joined in the window. The largest sources are Google (10.7%), Amazon (7.5%) and Meta (5.8%). Median prior tenure was 31 months."
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 5
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "direction": "joiners",
+      "company": {
+        "name": "Unknown Co",
+        "linkedinOrgId": "0",
+        "domains": []
+      },
+      "window": {
+        "after": null,
+        "before": null
+      },
+      "peopleCount": 0,
+      "companyBuckets": [],
+      "yearsOfExperience": {
+        "count": 0
+      },
+      "tenureMonths": {
+        "count": 0
+      },
+      "breakdowns": {
+        "bySeniority": [],
+        "byJobFunction": [],
+        "byCountry": [],
+        "byMetro": [],
+        "bySchool": [],
+        "byYearsOfExperience": []
+      },
+      "generatedAt": "2026-09-08T09:00:00.000Z",
+      "markdownSummary": "No measurable talent movement in the window."
+    },
+    "chargeInfo": {
+      "method": "charged-now",
+      "creditsCharged": 5
+    }
+  }
+}

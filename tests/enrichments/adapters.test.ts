@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { fiberCompanyRevenue } from "@/enrichments/fiber.company.revenue";
+import { fiberCompanyTalentFlow } from "@/enrichments/fiber.company.talentFlow";
 import { fiberContactReveal } from "@/enrichments/fiber.contact.reveal";
 import { fiberEmailValidate } from "@/enrichments/fiber.email.validate";
 import { fiberPeopleFindAtCompany } from "@/enrichments/fiber.people.findAtCompany";
@@ -218,5 +219,61 @@ describe("fiber.social.handles (async)", () => {
     expect(typeof fiberSocialHandles.start).toBe("function");
     expect(typeof fiberSocialHandles.poll).toBe("function");
     expect(fiberSocialHandles.run).toBeUndefined();
+  });
+});
+
+/* ------------------------------------------------------------------ */
+
+describe("fiber.company.talentFlow (sync)", () => {
+  const PATH = "/v1/talent-flow";
+
+  it("ranks the companies a company trades people with", async () => {
+    const { ctx } = context();
+    const value = await fiberCompanyTalentFlow.run!(
+      { linkedin_url: COMPANY, direction: "joiners" },
+      ctx,
+    );
+
+    expect(fiberCompanyTalentFlow.output.parse(value)).toEqual({
+      direction: "joiners",
+      people_analysed: 1284,
+      top_source: "Google",
+      top_source_share: 10.7,
+      top_sources: "Google, Amazon, Meta, Coinbase, Plaid",
+      median_tenure_months: 31,
+      median_years_experience: 8.5,
+    });
+  });
+
+  it("ranks by headcount, not by the order the API returned", async () => {
+    const { ctx } = context();
+    const value = (await fiberCompanyTalentFlow.run!(
+      { linkedin_url: COMPANY, direction: "joiners" },
+      ctx,
+    )) as { top_sources: string };
+    // Google (138) outranks Amazon (96) outranks Meta (74).
+    expect(value.top_sources.split(", ").slice(0, 3)).toEqual(["Google", "Amazon", "Meta"]);
+  });
+
+  it("returns null when nobody moved — a successful empty result", async () => {
+    const { ctx, fiber } = context();
+    fiber.program(PATH, { kind: "not_found" });
+    await expect(
+      fiberCompanyTalentFlow.run!({ linkedin_url: COMPANY, direction: "joiners" }, ctx),
+    ).resolves.toBeNull();
+  });
+
+  it("defaults to joiners", () => {
+    expect(fiberCompanyTalentFlow.inputs.parse({ linkedin_url: COMPANY }).direction).toBe("joiners");
+  });
+
+  it("keys joiners and leavers separately — they are different questions", () => {
+    expect(fiberCompanyTalentFlow.cacheKey({ linkedin_url: COMPANY, direction: "joiners" })).not.toBe(
+      fiberCompanyTalentFlow.cacheKey({ linkedin_url: COMPANY, direction: "leavers" }),
+    );
+  });
+
+  it("caches longer than the default, since a report takes up to two minutes", () => {
+    expect(fiberCompanyTalentFlow.ttlSeconds).toBeGreaterThan(7 * 24 * 60 * 60);
   });
 });

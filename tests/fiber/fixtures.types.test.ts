@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import emailBounceDetection from "@/fiber/fixtures/emailBounceDetection.json";
 import getCompanyRevenue from "@/fiber/fixtures/getCompanyRevenue.json";
+import getTalentFlow from "@/fiber/fixtures/getTalentFlow.json";
 import kitchenSinkCompany from "@/fiber/fixtures/kitchenSinkCompany.json";
 import peopleSearch from "@/fiber/fixtures/peopleSearch.json";
 import pollBatchContactDetails from "@/fiber/fixtures/pollBatchContactDetails.json";
@@ -51,6 +52,8 @@ const checked = {
     "post"
   >,
   revenue: getCompanyRevenue.responses["*"] satisfies ResponseShape<"/v1/company-revenue", "post">,
+  talentFlow: getTalentFlow.responses["*"] satisfies ResponseShape<"/v1/talent-flow", "post">,
+  talentFlowNotFound: getTalentFlow.notFound satisfies ResponseShape<"/v1/talent-flow", "post">,
   revenueNotFound: getCompanyRevenue.notFound satisfies ResponseShape<
     "/v1/company-revenue",
     "post"
@@ -98,11 +101,12 @@ const checked = {
 describe("fixtures match the generated OpenAPI response types", () => {
   it("structurally satisfies every operation's 200 response", () => {
     // Reaching this line means tsc accepted every `satisfies` above.
-    expect(Object.keys(checked)).toHaveLength(15);
+    expect(Object.keys(checked)).toHaveLength(17);
   });
 
   it("uses the real request paths from openapi.json", () => {
     expect(kitchenSinkCompany.path).toBe("/v1/kitchen-sink/company");
+    expect(getTalentFlow.path).toBe("/v1/talent-flow");
     expect(getCompanyRevenue.path).toBe("/v1/company-revenue");
     expect(peopleSearch.path).toBe("/v1/people-search");
     expect(startBatchContactDetails.path).toBe("/v1/contact-details/batch/start");
@@ -131,6 +135,7 @@ describe("fixtures match the generated OpenAPI response types", () => {
       emailBounceDetection,
       socialMediaLookupTrigger,
       socialMediaLookupPolling,
+      getTalentFlow,
     ];
     for (const f of fixtures) {
       for (const [key, payload] of Object.entries({ ...f.responses, notFound: f.notFound })) {

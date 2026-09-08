@@ -269,6 +269,7 @@ describe("fixtures", () => {
       "getCompanyRevenue",
       "getOrgCredits",
       "getRateLimits",
+      "getTalentFlow",
       "kitchenSinkCompany",
       "peopleSearch",
       "pollBatchContactDetails",

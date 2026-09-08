@@ -186,7 +186,31 @@ The add-column picker needs no wiring either: it probes the Zod schema to learn
 which inputs are required and what they accept, so a new adapter's UI is correct
 the day it lands.
 
-### The six shipped adapters
+### On `@fiberai/sdk`
+
+Fiber publishes an official TypeScript SDK. This project does not use it, and
+that is a decision rather than an oversight.
+
+`FiberClient` is a two-method interface. The HTTP implementation behind it does
+four things an SDK would not do for me:
+
+1. **Writes an `api_calls` row for every request** — endpoint, request hash,
+   status, latency, credits — which is what makes `provenance.api_call_id` on a
+   cell point at the exact call that produced it, and what lets a run reconcile
+   `actual_credits` from the ledger rather than from summed guesses.
+2. **Extracts credits from `chargeInfo`**, whose five-variant discriminated
+   union (`charged-now`, `charged-for-async-process`, `credits-refunded`,
+   `charging-later`, `free`) determines what a cell actually cost.
+3. **Hashes requests with sorted keys, excluding the API key**, so the same
+   lookup under a different key collapses to one cache entry.
+4. **Swaps for `FakeFiberClient`** behind the same interface, which is why 183
+   tests run with no network, no database and no key.
+
+The interface is the seam, not the transport. Moving `FiberHttpClient` to call
+the SDK internally would keep all four behaviours and is a contained change —
+one file, no adapter or engine changes. Worth doing; not done here.
+
+### The seven shipped adapters
 
 | Adapter | Mode | Fiber operation | Credits |
 |---|---|---|---|
@@ -196,8 +220,29 @@ the day it lands.
 | `fiber.contact.reveal` | **batch** | `startBatchContactDetails` + poll | 5 |
 | `fiber.email.validate` | sync | `emailBounceDetection` | 1 |
 | `fiber.social.handles` | **async** | `socialMediaLookupTrigger` + poll | 6 |
+| `fiber.company.talentFlow` | sync | `getTalentFlow` | 5 |
 
 All three run modes, and they chain: the demo table is four levels deep.
+
+**Why these.** Six of them are the obvious prospecting chain — resolve a company,
+find a person, get their contact, verify it. They were chosen to exercise every
+run mode and to depend on each other, so the DAG has something real to order.
+
+`talentFlow` is there for a different reason. Reading through Fiber's catalogue,
+it is the most distinctive thing in it: **where a company hires from, and where
+its alumni go** — an aggregate over up to 10,000 profiles rather than a row of
+attributes. It answers a question no company record contains ("who do we lose
+engineers to"), and it stress-tests the cell contract in a way the others do not,
+since the value is a *ranking* that has to collapse into one legible line.
+
+It also costs one file to add, which is the claim this README makes about the
+adapter interface, demonstrated rather than asserted.
+
+Runners-up worth building next, in order: **Mosaic CSV healing**
+(`startMosaic`/`pollMosaic`) piped through the import dialog, so a messy upload
+is repaired by Fiber before it becomes rows; `getScoutingReport`;
+`getDepartmentSize`; and `stealthFoundersSearch` as a row *source* rather than a
+column.
 
 ## Failure semantics
 
@@ -312,7 +357,7 @@ Verify by loading the demo table on production and running it.
 
 ## Tests
 
-**177 tests, no database, no network, no Inngest harness.** They run in about
+**183 tests, no database, no network, no Inngest harness.** They run in about
 half a second.
 
 | Area | Covers |
