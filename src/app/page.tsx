@@ -83,7 +83,7 @@ export default function Home() {
 
       {tables.data?.tables.length === 0 ? (
         <p className="rounded-md border border-dashed p-8 text-center text-sm text-muted-foreground">
-          No tables yet. Load the demo table to see the six-column chain, or create your own.
+          No tables yet. Load the demo table to see the seven-column chain, or create your own.
         </p>
       ) : null}
 
