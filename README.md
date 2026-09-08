@@ -394,7 +394,10 @@ Inngest dev server — through the journey a reviewer takes: load the demo table
 run it, and assert **every cell reaches a terminal state**, then that re-running
 does not redo work that already succeeded.
 
-It is deliberately separate from `pnpm test`. Those 195 unit tests run with no
+A second spec covers creating and deleting a table, including that the row is
+gone from the server after a reload rather than only from the client cache.
+
+Both are deliberately separate from `pnpm test`. Those 195 unit tests run with no
 network, no database and no key, and that property is worth protecting.
 
 It found a real bug on its first green run. `RunConfirmDialog` keys its dry-run

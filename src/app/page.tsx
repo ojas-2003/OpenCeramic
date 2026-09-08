@@ -1,6 +1,7 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -33,6 +34,15 @@ export default function Home() {
       setOpen(false);
       setName("");
       toast.notify("Table created");
+      void queryClient.invalidateQueries({ queryKey: ["tables"] });
+    },
+    onError: (e: Error) => toast.fail(e.message),
+  });
+
+  const removeTable = useMutation({
+    mutationFn: api.deleteTable,
+    onSuccess: () => {
+      toast.notify("Table deleted");
       void queryClient.invalidateQueries({ queryKey: ["tables"] });
     },
     onError: (e: Error) => toast.fail(e.message),
@@ -79,14 +89,28 @@ export default function Home() {
 
       <ul className="flex flex-col gap-2">
         {tables.data?.tables.map((table) => (
-          <li key={table.id}>
+          <li key={table.id} className="group flex items-center gap-2 rounded-md border pr-2 hover:bg-accent">
             <Link
               href={`/tables/${table.id}`}
-              className="flex items-center gap-3 rounded-md border px-4 py-3 text-sm hover:bg-accent"
+              className="flex flex-1 items-center gap-3 px-4 py-3 text-sm"
             >
               <span className="font-medium">{table.name}</span>
               <Badge variant="secondary">{table.entityType}</Badge>
             </Link>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Delete ${table.name}`}
+              disabled={removeTable.isPending}
+              // Deleting a table cascades to its columns, rows and cells, so it
+              // is worth one confirmation.
+              onClick={() =>
+                window.confirm(`Delete "${table.name}" and all of its rows and cells?`) &&
+                removeTable.mutate(table.id)
+              }
+            >
+              <Trash2 className="size-4 text-muted-foreground" />
+            </Button>
           </li>
         ))}
       </ul>
