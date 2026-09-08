@@ -426,7 +426,7 @@ Recorded after the build, since several played out differently than planned.
 
 | Risk as written | What happened |
 |---|---|
-| "Sandbox key delay — build against a fake client until it arrives" | The key arrived quickly but **five of six operations return 501 "Sandbox mode is not yet available"**. The fake-client decision was right for a reason we did not anticipate: sandbox coverage, not key latency. |
+| "Sandbox key delay — build against a fake client until it arrives" | The key arrived quickly but **six of the seven adapter operations return 501 "Sandbox mode is not yet available"**, along with Mosaic and both account endpoints. The fake-client decision was right for a reason we did not anticipate: sandbox coverage, not key latency. |
 | "Fiber sandbox returns canned data" | True for the one endpoint that works. `peopleSearch` returns `Jane Doe / jane-doe-sandbox`. |
 | "Vercel Hobby limits" | Not hit. The real deployment obstacle was **Deployment Protection**, which returns 401 to Inngest Cloud so it cannot reach `/api/inngest`, leaving runs stuck at `planned`. |
 | "Grid eats the time budget" | It did not. What ate time was the repository living in an **iCloud-synced folder**: `tsc` took 7–10 minutes (1.3s of CPU), npm tarballs were silently truncated, and iCloud wrote conflict copies into `.git/refs/heads/` that broke `git clone`. Moving to `~/dev` took typecheck to 3 seconds. |

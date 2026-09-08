@@ -17,17 +17,35 @@ The spreadsheet is only the rendering. The engine is the thing.
 ### The demo runs on recorded fixtures, and here is why
 
 Fiber issues sandbox keys (`sk_test_…`) self-serve, and they never charge
-credits. Probed with valid request bodies, **five of the six operations this
-project needs return 501**:
+credits. Probed with valid request bodies, **six of the seven operations behind
+this project's adapters return 501**, as do the Mosaic import and both account
+endpoints:
+
+| Operation | Sandbox |
+|---|---|
+| `peopleSearch` | **200**, returns synthetic data |
+| `kitchenSinkCompany` | 501 |
+| `getCompanyRevenue` | 501 |
+| `getTalentFlow` | 501 |
+| `startBatchContactDetails` | 501 |
+| `emailBounceDetection` | 501 |
+| `socialMediaLookupTrigger` | 501 |
+| `startMosaic` | 501 |
+| `getOrgCredits`, `getRateLimits` | 501 |
 
 ```
 POST /v1/kitchen-sink/company
 {"message":"Sandbox mode is not yet available for this endpoint."}
 ```
 
-Only `peopleSearch` responds, and it returns synthetic data. So the deployed demo
-runs with `FIBER_FAKE=1`, serving responses recorded from `openapi.json`-typed
-fixtures.
+Only `peopleSearch` responds, and it returns synthetic data (`Jane Doe`,
+`jane-doe-sandbox`). So the deployed demo runs with `FIBER_FAKE=1`, serving
+responses recorded from `openapi.json`-typed fixtures.
+
+One trap worth flagging: **body validation runs before the sandbox check**, so
+probing an endpoint with an incomplete body returns `400 body/x Required` and
+looks reachable. Only a valid body reveals the 501. That is how I originally
+undercounted this.
 
 **What that does and does not mean.** The DAG resolution, level ordering,
 caching, retry/backoff, credit accounting, skip semantics and durable execution

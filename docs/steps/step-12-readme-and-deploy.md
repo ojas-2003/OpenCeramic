@@ -68,5 +68,5 @@ their reason, a cache keyed on normalised inputs, and credits reconciled from
 `api_calls` rather than guessed.
 
 The one thing it has never done is call the live Fiber API for the operations
-that matter, because sandbox keys return 501 for four of the six. That is the
+that matter, because sandbox keys return 501 for six of the seven. That is the
 first thing to fix with a live key, and the README says so.
