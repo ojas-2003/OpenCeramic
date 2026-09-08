@@ -1,3 +1,4 @@
+import { createClient, createConfig, type Client } from "@fiberai/sdk";
 import { createHash, randomUUID } from "node:crypto";
 
 import type { NewApiCall } from "@/db/schema";
@@ -180,7 +181,10 @@ export type FiberHttpClientOptions = {
   baseUrl?: string;
   logger?: ApiCallLogger;
   timeoutMs?: number;
+  /** Injected in tests to drive the SDK's transport without a network. */
   fetchImpl?: typeof fetch;
+  /** Supply a pre-configured SDK client; one is created if omitted. */
+  sdk?: Client;
 };
 
 /** llms.txt recommends a 30s timeout for the heavier lookups. */
@@ -188,12 +192,22 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 
 const QUERY_METHODS = new Set(["GET", "DELETE"]);
 
+/**
+ * Transport is Fiber's official SDK (`@fiberai/sdk`); the wrapper around it is
+ * what the rest of the app depends on.
+ *
+ * The SDK owns request building, auth and response parsing. This class owns the
+ * four things the engine needs and an SDK does not provide: an `api_calls` row
+ * per request, credit extraction from `chargeInfo`, a stable request hash for
+ * caching, and the retryable/terminal error split. `FiberClient` is the seam, so
+ * `FakeFiberClient` can stand in for all of it offline.
+ */
 export class FiberHttpClient implements FiberClient {
   private readonly apiKey: string;
   private readonly baseUrl: string;
   private readonly logger: ApiCallLogger;
   private readonly timeoutMs: number;
-  private readonly fetchImpl: typeof fetch;
+  private readonly sdk: Client;
 
   constructor(options: FiberHttpClientOptions = {}) {
     this.apiKey = options.apiKey ?? process.env.FIBER_API_KEY ?? "";
@@ -203,7 +217,14 @@ export class FiberHttpClient implements FiberClient {
     );
     this.logger = options.logger ?? createDbApiCallLogger();
     this.timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.sdk =
+      options.sdk ??
+      createClient(
+        createConfig({
+          baseUrl: this.baseUrl,
+          ...(options.fetchImpl ? { fetch: options.fetchImpl } : {}),
+        }),
+      );
   }
 
   async call<P extends keyof paths, M extends keyof paths[P]>(
@@ -223,33 +244,25 @@ export class FiberHttpClient implements FiberClient {
     // lookup made with a different key still collapses to one cache entry.
     const requestHash = hashRequest(input);
 
-    const url = new URL(`${this.baseUrl}${endpoint}`);
-    let payload: string | undefined;
-
-    if (QUERY_METHODS.has(httpMethod)) {
-      // llms.txt: GET/DELETE take the key in the query string.
-      for (const [key, value] of Object.entries(input)) {
-        if (value !== undefined && value !== null) url.searchParams.set(key, String(value));
-      }
-      url.searchParams.set("apiKey", this.apiKey);
-    } else {
-      // llms.txt: POST/PATCH/PUT take the key in the body.
-      payload = JSON.stringify({ ...input, apiKey: this.apiKey });
-    }
+    // llms.txt: GET/DELETE carry the key in the query string, POST/PATCH/PUT in
+    // the body. The SDK sends whichever we hand it.
+    const isQuery = QUERY_METHODS.has(httpMethod);
+    const request = {
+      url: endpoint,
+      // Never throw on a non-2xx; the error taxonomy below classifies it.
+      throwOnError: false as const,
+      headers: { "x-api-key": this.apiKey },
+      signal: AbortSignal.timeout(this.timeoutMs),
+      ...(isQuery
+        ? { query: { ...input, apiKey: this.apiKey } }
+        : { body: { ...input, apiKey: this.apiKey } }),
+    };
 
     const startedAt = performance.now();
-    let response: Response;
+    let result: { data?: unknown; error?: unknown; response: Response };
     try {
-      response = await this.fetchImpl(url, {
-        method: httpMethod,
-        headers: {
-          "content-type": "application/json",
-          // Header form is also accepted; body/query take precedence.
-          "x-api-key": this.apiKey,
-        },
-        body: payload,
-        signal: AbortSignal.timeout(this.timeoutMs),
-      });
+      const method = httpMethod.toLowerCase() as "get" | "post" | "put" | "patch" | "delete";
+      result = await this.sdk[method](request);
     } catch (cause) {
       const latencyMs = Math.round(performance.now() - startedAt);
       await this.logger.record({
@@ -264,8 +277,26 @@ export class FiberHttpClient implements FiberClient {
     }
 
     const latencyMs = Math.round(performance.now() - startedAt);
-    const text = await response.text();
-    const json = parseJson(text);
+    const response = result.response;
+
+    // The SDK does not re-throw a transport failure; it resolves with no
+    // response at all. Without this the next line would raise a TypeError,
+    // which the taxonomy would classify as terminal — so a network blip would
+    // permanently fail a cell instead of being retried.
+    if (!response) {
+      await this.logger.record({
+        endpoint,
+        requestHash,
+        httpStatus: null,
+        latencyMs,
+        credits: 0,
+        responseMeta: { transport_error: true },
+      });
+      throw fiberErrorFromNetwork(result.error ?? new Error("No response from Fiber"));
+    }
+
+    // On a non-2xx the SDK puts the parsed body on `error` rather than `data`.
+    const json = response.ok ? (result.data ?? null) : (result.error ?? null);
     const credits = extractCredits(json);
 
     // Logged for both success and failure — api_calls is the audit trail.
@@ -277,7 +308,6 @@ export class FiberHttpClient implements FiberClient {
       credits,
       responseMeta: {
         ok: response.ok,
-        bytes: text.length,
         charge_info: readChargeInfo(json),
       },
     });
@@ -291,14 +321,5 @@ export class FiberHttpClient implements FiberClient {
       credits,
       apiCallId,
     };
-  }
-}
-
-function parseJson(text: string): unknown {
-  if (!text) return null;
-  try {
-    return JSON.parse(text);
-  } catch {
-    return { raw: text };
   }
 }

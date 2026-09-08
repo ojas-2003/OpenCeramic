@@ -188,27 +188,31 @@ the day it lands.
 
 ### On `@fiberai/sdk`
 
-Fiber publishes an official TypeScript SDK. This project does not use it, and
-that is a decision rather than an oversight.
+The transport **is** Fiber's official SDK. `FiberHttpClient` builds a client with
+`createClient(createConfig({ baseUrl }))` and issues every request through it.
 
-`FiberClient` is a two-method interface. The HTTP implementation behind it does
-four things an SDK would not do for me:
+The SDK is wrapped rather than used directly, because `FiberClient` — a
+two-method interface — is what the rest of the app depends on, and the wrapper
+adds four things the engine needs that no SDK provides:
 
-1. **Writes an `api_calls` row for every request** — endpoint, request hash,
-   status, latency, credits — which is what makes `provenance.api_call_id` on a
-   cell point at the exact call that produced it, and what lets a run reconcile
-   `actual_credits` from the ledger rather than from summed guesses.
-2. **Extracts credits from `chargeInfo`**, whose five-variant discriminated
-   union (`charged-now`, `charged-for-async-process`, `credits-refunded`,
-   `charging-later`, `free`) determines what a cell actually cost.
-3. **Hashes requests with sorted keys, excluding the API key**, so the same
+1. **An `api_calls` row per request** — endpoint, request hash, status, latency,
+   credits. This is what makes `provenance.api_call_id` on a cell point at the
+   exact call that produced it, and what lets a run reconcile `actual_credits`
+   from a ledger rather than from summed guesses.
+2. **Credit extraction from `chargeInfo`**, a five-variant discriminated union
+   (`charged-now`, `charged-for-async-process`, `credits-refunded`,
+   `charging-later`, `free`).
+3. **A stable request hash** with sorted keys, excluding the API key, so the same
    lookup under a different key collapses to one cache entry.
-4. **Swaps for `FakeFiberClient`** behind the same interface, which is why 183
-   tests run with no network, no database and no key.
+4. **A swappable fake.** `FakeFiberClient` implements the same interface, which
+   is why 183 tests run with no network, no database and no key.
 
-The interface is the seam, not the transport. Moving `FiberHttpClient` to call
-the SDK internally would keep all four behaviours and is a contained change —
-one file, no adapter or engine changes. Worth doing; not done here.
+One thing the swap surfaced, worth knowing if you wrap this SDK yourself: **it
+does not re-throw a transport failure.** A rejected `fetch` resolves with
+`response: undefined` rather than throwing, so a naive `response.ok` raises a
+`TypeError` — which an error taxonomy would classify as *terminal*, permanently
+failing a cell that a retry would have fixed. `FiberHttpClient` checks for the
+missing response and maps it to a retryable network error. There is a test for it.
 
 ### The seven shipped adapters
 

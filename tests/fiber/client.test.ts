@@ -302,15 +302,17 @@ describe("FiberHttpClient", () => {
   it("sends apiKey in the body for POST and never in the query", async () => {
     const logger = new MemoryApiCallLogger();
     let seenUrl = "";
-    let seenInit: RequestInit | undefined;
+    let seenBody = "";
 
     const client = new FiberHttpClient({
       apiKey: "sk_live_test",
       baseUrl: "https://api.fiber.ai",
       logger,
-      fetchImpl: async (url, init) => {
-        seenUrl = String(url);
-        seenInit = init;
+      // The SDK invokes fetch with a Request object, not (url, init).
+      fetchImpl: async (input) => {
+        const request = input as Request;
+        seenUrl = request.url;
+        seenBody = await request.clone().text();
         return jsonResponse({
           output: { data: [] },
           chargeInfo: { method: "charged-now", creditsCharged: 2 },
@@ -324,7 +326,7 @@ describe("FiberHttpClient", () => {
 
     expect(seenUrl).toBe("https://api.fiber.ai/v1/kitchen-sink/company");
     expect(seenUrl).not.toContain("apiKey");
-    expect(JSON.parse(String(seenInit?.body))).toMatchObject({
+    expect(JSON.parse(seenBody)).toMatchObject({
       apiKey: "sk_live_test",
       companyDomain: { value: "stripe.com" },
     });
@@ -338,8 +340,8 @@ describe("FiberHttpClient", () => {
     const client = new FiberHttpClient({
       apiKey: "sk_live_test",
       logger,
-      fetchImpl: async (url) => {
-        seenUrl = String(url);
+      fetchImpl: async (input) => {
+        seenUrl = (input as Request).url;
         return jsonResponse({ output: { credits: 4900 } });
       },
     });
