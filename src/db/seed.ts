@@ -7,6 +7,7 @@ import type { Table } from "@/db/schema";
  * uploading anything.
  *
  *   Website -> Resolve company -> Revenue
+ *                              -> Talent flow
  *                              -> Find CEO -> Reveal contact -> Validate email
  *                                                            -> Social handles
  */
@@ -52,6 +53,9 @@ export async function seedDemoTable(): Promise<{ table: Table; columns: number; 
   await add("Revenue", "fiber.company.revenue", {
     linkedin_url: `${company.id}.linkedin_url`,
   });
+  await add("Talent flow", "fiber.company.talentFlow", {
+    linkedin_url: `${company.id}.linkedin_url`,
+  });
   const ceo = await add("Find CEO", "fiber.people.findAtCompany", {
     company_linkedin_url: `${company.id}.linkedin_url`,
   });
@@ -71,7 +75,8 @@ export async function seedDemoTable(): Promise<{ table: Table; columns: number; 
     DEMO_DOMAINS.map((domain) => ({ Website: domain })),
   );
 
-  return { table, columns: 7, rows: rows.length };
+  // Website plus seven enrichment columns.
+  return { table, columns: 8, rows: rows.length };
 }
 
 // `pnpm db:seed`

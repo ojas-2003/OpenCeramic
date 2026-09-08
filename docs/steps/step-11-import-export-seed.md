@@ -6,12 +6,13 @@ six-column chain end to end
 ## The demo runs
 
 `POST /api/demo` builds the table from DESIGN.md §5.1 — 25 real SaaS domains,
-seven columns, four DAG levels, all three run modes:
+eight columns, four DAG levels, all three run modes:
 
 ```
 Website -> Resolve company -> Revenue
+                           -> Talent flow
                            -> Find CEO -> Reveal contact -> Validate email
-                                       -> Social handles
+                                                        -> Social handles
 ```
 
 Planned as `levels: [1, 2, 2, 1]` — four deep, exactly as designed. 150

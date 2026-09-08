@@ -65,8 +65,8 @@ pnpm dev                       # terminal 2
 
 Then at <http://localhost:3000>:
 
-1. **Load demo table** — 25 SaaS companies, six enrichment columns, four DAG levels
-2. **Run table** — you get a price first: *"Run 150 cells (0 cached) · est. 425 credits · balance 4,900"*. Nothing is spent until you confirm.
+1. **Load demo table** — 25 SaaS companies, seven enrichment columns, four DAG levels
+2. **Run table** — you get a price first: *"Run 175 cells (0 cached) · est. 550 credits · balance 4,900"*. Nothing is spent until you confirm.
 3. **Click any cell** — full JSON, plus provenance: credits, latency, cache hit, and the `api_call_id` of the exact request behind the value.
 
 Then press **Run table** again. It costs **0 credits** and finishes instantly —
