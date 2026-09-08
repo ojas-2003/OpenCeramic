@@ -33,6 +33,13 @@ export function RunConfirmDialog({
     queryKey: ["dry-run", tableId, request],
     enabled: request !== null,
     retry: false,
+    // Never show a cached estimate. Two runs of the same scope produce an
+    // identical query key, so without this, reopening the dialog after a run
+    // displays the *previous* run's numbers — on the one screen whose entire
+    // purpose is telling the user what they are about to spend.
+    staleTime: 0,
+    gcTime: 0,
+    refetchOnMount: "always",
     queryFn: () => api.run(tableId, { ...request!, dry_run: true }),
   });
 

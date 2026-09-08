@@ -385,6 +385,23 @@ half a second.
 | `tests/enrichments/contract.test.ts` | Every adapter: unique `fiber.*` id, mode matches implemented methods, output parses, cache keys stable under normalisation, estimates match fixture charges |
 | `tests/fiber/*` | Request hashing stable across key order, error taxonomy, credit extraction, fixtures typechecked against the generated OpenAPI types |
 | `tests/api/columns.test.ts` | Column validation: bad adapter, wrong entity, unmapped input, unknown source, self-reference, cycle |
+| `tests/lib/mosaic.test.ts` | Mosaic start/poll, healed-CSV download and parse, expired link, column cap |
+
+### One end-to-end test
+
+`pnpm test:e2e` drives the real stack in a browser — Next.js, Postgres and the
+Inngest dev server — through the journey a reviewer takes: load the demo table,
+run it, and assert **every cell reaches a terminal state**, then that re-running
+does not redo work that already succeeded.
+
+It is deliberately separate from `pnpm test`. Those 195 unit tests run with no
+network, no database and no key, and that property is worth protecting.
+
+It found a real bug on its first green run. `RunConfirmDialog` keys its dry-run
+preview on the request, and two runs of the same scope produce an identical key —
+so reopening the dialog after a run served the *previous* estimate from cache,
+on the one screen whose entire purpose is telling you what you are about to
+spend. Fixed by making that query always refetch.
 
 The engine is testable because dependencies are injected: the planner takes
 `{ db, registry, cacheLookup }`, and the executor's core takes
