@@ -1,0 +1,43 @@
+{
+  "operationId": "addTrackerCompanies",
+  "path": "/v1/tracker/company-lists/{listId}/companies",
+  "method": "put",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "added": 1,
+        "skipped": 0,
+        "invalidCompanies": [],
+        "initialSignals": {
+          "triggered": false,
+          "companiesQueued": 0
+        }
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "added": 0,
+      "skipped": 0,
+      "invalidCompanies": [
+        {
+          "index": 0,
+          "reason": "Company not found"
+        }
+      ],
+      "initialSignals": {
+        "triggered": false,
+        "companiesQueued": 0
+      }
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

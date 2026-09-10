@@ -1,0 +1,67 @@
+{
+  "operationId": "getSavedSearchRunCompanies",
+  "path": "/v1/saved-search/run/companies",
+  "method": "post",
+  "creditCost": 2,
+  "responses": {
+    "*": {
+      "output": {
+        "companies": [
+          {
+            "company": {
+              "domains": [
+                "https://www.Stripe.com/"
+              ],
+              "preferred_name": "Stripe",
+              "names": [
+                "Stripe"
+              ],
+              "linkedin_primary_slug": "stripe",
+              "li_org_id": "1441",
+              "li_headline": "Stripe \u2014 company page"
+            },
+            "movementType": "joined"
+          },
+          {
+            "company": {
+              "domains": [
+                "linear.app"
+              ],
+              "preferred_name": "Linear",
+              "names": [
+                "Linear"
+              ],
+              "linkedin_primary_slug": "linear",
+              "li_org_id": "18869755",
+              "li_headline": "Linear \u2014 company page"
+            },
+            "movementType": "returned"
+          },
+          {
+            "company": {
+              "domains": [],
+              "preferred_name": "Stealth Co",
+              "li_org_id": "999"
+            },
+            "movementType": "joined"
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 4
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "companies": [],
+      "nextCursor": null
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

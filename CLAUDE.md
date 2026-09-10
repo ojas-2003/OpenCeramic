@@ -37,3 +37,10 @@ src/inngest/        client.ts
 src/components/     UI
 src/lib/            shared helpers
 tests/              vitest, mirrors src/
+
+## Row sources
+- A row source discovers entities and creates rows. It never fills cells. Enrichments fill cells and never create rows. Keep the two layers separate.
+- src/sources/** mirrors src/enrichments/**: types.ts, registry.ts, one file per source. The poller (src/engine/poller.ts) never imports a specific source.
+- Row insertion is idempotent via rows.identity_key. Polling the same source twice must never duplicate a row.
+- Auto-triggered runs are scoped to the newly inserted rows only, never the whole table.
+- Unattended spend is capped by MAX_AUTO_CREDITS_PER_POLL, separate from MAX_CREDITS_PER_RUN.

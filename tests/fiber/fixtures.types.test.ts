@@ -1,6 +1,17 @@
 import { describe, expect, it } from "vitest";
 
+import addTrackerCompanies from "@/fiber/fixtures/addTrackerCompanies.json";
+import addTrackerPeople from "@/fiber/fixtures/addTrackerPeople.json";
+import createSavedSearch from "@/fiber/fixtures/createSavedSearch.json";
+import createTrackerCompanyList from "@/fiber/fixtures/createTrackerCompanyList.json";
+import createTrackerPersonList from "@/fiber/fixtures/createTrackerPersonList.json";
 import emailBounceDetection from "@/fiber/fixtures/emailBounceDetection.json";
+import fireTrackerDummy from "@/fiber/fixtures/fireTrackerDummy.json";
+import getLatestSavedSearchRun from "@/fiber/fixtures/getLatestSavedSearchRun.json";
+import getSavedSearchRunCompanies from "@/fiber/fixtures/getSavedSearchRunCompanies.json";
+import getSavedSearchRunProfiles from "@/fiber/fixtures/getSavedSearchRunProfiles.json";
+import getSavedSearchRunStatus from "@/fiber/fixtures/getSavedSearchRunStatus.json";
+import listTrackerSignals from "@/fiber/fixtures/listTrackerSignals.json";
 import getCompanyRevenue from "@/fiber/fixtures/getCompanyRevenue.json";
 import getTalentFlow from "@/fiber/fixtures/getTalentFlow.json";
 import kitchenSinkCompany from "@/fiber/fixtures/kitchenSinkCompany.json";
@@ -96,12 +107,68 @@ const checked = {
     "/v1/social-media-lookup/polling",
     "post"
   >,
+
+  /* Row sources. */
+  savedSearchCreate: createSavedSearch.responses["*"] satisfies ResponseShape<
+    "/v1/saved-search/create",
+    "post"
+  >,
+  savedSearchLatestRun: getLatestSavedSearchRun.responses["*"] satisfies ResponseShape<
+    "/v1/saved-search/run/get-latest",
+    "post"
+  >,
+  savedSearchRunStatus: getSavedSearchRunStatus.responses["*"] satisfies ResponseShape<
+    "/v1/saved-search/run/status",
+    "post"
+  >,
+  savedSearchRunProcessing: getSavedSearchRunStatus.responses.processing satisfies ResponseShape<
+    "/v1/saved-search/run/status",
+    "post"
+  >,
+  savedSearchProfiles: getSavedSearchRunProfiles.responses["*"] satisfies ResponseShape<
+    "/v1/saved-search/run/profiles",
+    "post"
+  >,
+  savedSearchCompanies: getSavedSearchRunCompanies.responses["*"] satisfies ResponseShape<
+    "/v1/saved-search/run/companies",
+    "post"
+  >,
+  trackerCompanyList: createTrackerCompanyList.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/company-lists",
+    "post"
+  >,
+  trackerPersonList: createTrackerPersonList.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/person-lists",
+    "post"
+  >,
+  trackerAddCompanies: addTrackerCompanies.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/company-lists/{listId}/companies",
+    "put"
+  >,
+  trackerAddPeople: addTrackerPeople.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/person-lists/{listId}/people",
+    "put"
+  >,
+  trackerSignals: listTrackerSignals.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/signals/{listId}",
+    "get"
+  >,
+  trackerSignalsEqual: listTrackerSignals.responses.equalTimestamps satisfies ResponseShape<
+    "/v1/tracker/signals/{listId}",
+    "get"
+  >,
+  trackerSignalsUnidentifiable: listTrackerSignals.responses
+    .unidentifiable satisfies ResponseShape<"/v1/tracker/signals/{listId}", "get">,
+  trackerFireDummy: fireTrackerDummy.responses["*"] satisfies ResponseShape<
+    "/v1/tracker/fire-dummy/{listId}",
+    "post"
+  >,
 };
 
 describe("fixtures match the generated OpenAPI response types", () => {
   it("structurally satisfies every operation's 200 response", () => {
     // Reaching this line means tsc accepted every `satisfies` above.
-    expect(Object.keys(checked)).toHaveLength(17);
+    expect(Object.keys(checked)).toHaveLength(31);
   });
 
   it("uses the real request paths from openapi.json", () => {
@@ -114,6 +181,24 @@ describe("fixtures match the generated OpenAPI response types", () => {
     expect(emailBounceDetection.path).toBe("/v1/validate-email/single");
     expect(socialMediaLookupTrigger.path).toBe("/v1/social-media-lookup/trigger");
     expect(socialMediaLookupPolling.path).toBe("/v1/social-media-lookup/polling");
+    expect(createSavedSearch.path).toBe("/v1/saved-search/create");
+    expect(getLatestSavedSearchRun.path).toBe("/v1/saved-search/run/get-latest");
+    expect(getSavedSearchRunStatus.path).toBe("/v1/saved-search/run/status");
+    expect(getSavedSearchRunProfiles.path).toBe("/v1/saved-search/run/profiles");
+    expect(getSavedSearchRunCompanies.path).toBe("/v1/saved-search/run/companies");
+    expect(createTrackerCompanyList.path).toBe("/v1/tracker/company-lists");
+    expect(createTrackerPersonList.path).toBe("/v1/tracker/person-lists");
+  });
+
+  /**
+   * Templated paths stay templated. FakeFiberClient keys fixtures by path, so an
+   * interpolated id here would mean no fixture ever matched at runtime.
+   */
+  it("keeps path templates for the operations that take path parameters", () => {
+    expect(addTrackerCompanies.path).toBe("/v1/tracker/company-lists/{listId}/companies");
+    expect(addTrackerPeople.path).toBe("/v1/tracker/person-lists/{listId}/people");
+    expect(listTrackerSignals.path).toBe("/v1/tracker/signals/{listId}");
+    expect(fireTrackerDummy.path).toBe("/v1/tracker/fire-dummy/{listId}");
   });
 
   /* Enum spellings, which DeepWiden deliberately does not police. */
@@ -136,6 +221,17 @@ describe("fixtures match the generated OpenAPI response types", () => {
       socialMediaLookupTrigger,
       socialMediaLookupPolling,
       getTalentFlow,
+      createSavedSearch,
+      getLatestSavedSearchRun,
+      getSavedSearchRunStatus,
+      getSavedSearchRunProfiles,
+      getSavedSearchRunCompanies,
+      createTrackerCompanyList,
+      createTrackerPersonList,
+      addTrackerCompanies,
+      addTrackerPeople,
+      listTrackerSignals,
+      fireTrackerDummy,
     ];
     for (const f of fixtures) {
       for (const [key, payload] of Object.entries({ ...f.responses, notFound: f.notFound })) {

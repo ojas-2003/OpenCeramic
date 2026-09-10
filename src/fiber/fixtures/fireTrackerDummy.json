@@ -1,0 +1,45 @@
+{
+  "operationId": "fireTrackerDummy",
+  "path": "/v1/tracker/fire-dummy/{listId}",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "signals": [
+          {
+            "id": "sig_dummy_001",
+            "ruleId": "rule_dummy_funding",
+            "ruleType": "new_funding_round",
+            "entityId": "ent_linear",
+            "summary": "Test signal: Linear raised a $65M Series C led by Accel.",
+            "changeData": [
+              {
+                "type": "series_c",
+                "amountUsd": 65000000,
+                "investors": [
+                  "Accel"
+                ]
+              }
+            ],
+            "isDummy": true,
+            "webhookDispatched": false
+          }
+        ]
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "signals": []
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

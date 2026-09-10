@@ -1,0 +1,120 @@
+{
+  "operationId": "getSavedSearchRunStatus",
+  "path": "/v1/saved-search/run/status",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "run": {
+          "id": "ssr_2026_09_09",
+          "status": "COMPLETED",
+          "startedAt": "2026-09-09T02:00:00.000Z",
+          "completedAt": "2026-09-09T02:14:31.000Z",
+          "executionMode": "automatically_triggered",
+          "companiesStats": {
+            "numCompaniesJoined": 2,
+            "numCompaniesDeparted": 0,
+            "numCompaniesStayed": 11,
+            "numCompaniesReturned": 1
+          },
+          "peopleStats": {
+            "numPeopleJoined": 2,
+            "numPeopleDeparted": 0,
+            "numPeopleReturned": 0,
+            "numPeopleStayed": 4
+          },
+          "savedSearchId": "ss_seedstage_saas"
+        }
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "processing": {
+      "output": {
+        "run": {
+          "id": "ssr_2026_09_09",
+          "status": "PROCESSING",
+          "startedAt": "2026-09-09T02:00:00.000Z",
+          "completedAt": null,
+          "executionMode": "automatically_triggered",
+          "companiesStats": {
+            "numCompaniesJoined": 2,
+            "numCompaniesDeparted": 0,
+            "numCompaniesStayed": 11,
+            "numCompaniesReturned": 1
+          },
+          "peopleStats": {
+            "numPeopleJoined": 2,
+            "numPeopleDeparted": 0,
+            "numPeopleReturned": 0,
+            "numPeopleStayed": 4
+          },
+          "savedSearchId": "ss_seedstage_saas"
+        }
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "failed": {
+      "output": {
+        "run": {
+          "id": "ssr_2026_09_09",
+          "status": "REJECTED_NO_FUNDS",
+          "startedAt": null,
+          "completedAt": null,
+          "executionMode": "automatically_triggered",
+          "companiesStats": {
+            "numCompaniesJoined": 2,
+            "numCompaniesDeparted": 0,
+            "numCompaniesStayed": 11,
+            "numCompaniesReturned": 1
+          },
+          "peopleStats": {
+            "numPeopleJoined": 2,
+            "numPeopleDeparted": 0,
+            "numPeopleReturned": 0,
+            "numPeopleStayed": 4
+          },
+          "savedSearchId": "ss_seedstage_saas"
+        }
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "run": {
+        "id": "ssr_2026_09_09",
+        "status": "COMPLETED",
+        "startedAt": "2026-09-09T02:00:00.000Z",
+        "completedAt": "2026-09-09T02:14:31.000Z",
+        "executionMode": "automatically_triggered",
+        "companiesStats": {
+          "numCompaniesJoined": 2,
+          "numCompaniesDeparted": 0,
+          "numCompaniesStayed": 11,
+          "numCompaniesReturned": 1
+        },
+        "peopleStats": {
+          "numPeopleJoined": 2,
+          "numPeopleDeparted": 0,
+          "numPeopleReturned": 0,
+          "numPeopleStayed": 4
+        },
+        "savedSearchId": "ss_seedstage_saas"
+      }
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

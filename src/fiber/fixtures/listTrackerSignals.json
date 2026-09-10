@@ -1,0 +1,228 @@
+{
+  "operationId": "listTrackerSignals",
+  "path": "/v1/tracker/signals/{listId}",
+  "method": "get",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "signals": [
+          {
+            "id": "sig_001",
+            "entityId": "ent_linear",
+            "entityType": "company",
+            "linkedinIdentifier": "li_linear",
+            "linkedinSlug": "linear",
+            "linkedinUrl": "https://www.linkedin.com/company/linear",
+            "type": "new_funding_round",
+            "summary": "Linear raised a $65M Series C led by Accel.",
+            "changeData": [
+              {
+                "type": "series_c",
+                "amountUsd": 65000000,
+                "date": "2026-09-05",
+                "investors": [
+                  "Accel",
+                  "Index Ventures"
+                ]
+              }
+            ],
+            "sources": [
+              "https://www.linkedin.com/company/linear"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-08T09:00:00.000Z",
+            "eventDate": "2026-09-05T00:00:00.000Z",
+            "centiCreditsCharged": 100,
+            "isDummy": false
+          },
+          {
+            "id": "sig_002",
+            "entityId": "ent_resend",
+            "entityType": "company",
+            "linkedinIdentifier": "li_resend",
+            "linkedinSlug": "resend",
+            "linkedinUrl": "https://www.linkedin.com/company/resend",
+            "type": "funding_stage_changed",
+            "summary": "Resend moved from Series B to Series C.",
+            "changeData": [
+              {
+                "kind": "scalar",
+                "previous": "series_b",
+                "current": "series_c"
+              }
+            ],
+            "sources": [
+              "https://www.linkedin.com/company/resend"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-09T11:30:00.000Z",
+            "eventDate": "2026-09-07T00:00:00.000Z",
+            "centiCreditsCharged": 100,
+            "isDummy": false
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "equalTimestamps": {
+      "output": {
+        "signals": [
+          {
+            "id": "sig_002",
+            "entityId": "ent_resend",
+            "entityType": "company",
+            "linkedinIdentifier": "li_resend",
+            "linkedinSlug": "resend",
+            "linkedinUrl": "https://www.linkedin.com/company/resend",
+            "type": "funding_stage_changed",
+            "summary": "Resend moved from Series B to Series C.",
+            "changeData": [
+              {
+                "kind": "scalar",
+                "previous": "series_b",
+                "current": "series_c"
+              }
+            ],
+            "sources": [
+              "https://www.linkedin.com/company/resend"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-09T11:30:00.000Z",
+            "eventDate": "2026-09-07T00:00:00.000Z",
+            "centiCreditsCharged": 100,
+            "isDummy": false
+          },
+          {
+            "id": "sig_003",
+            "entityId": "ent_modal",
+            "entityType": "company",
+            "linkedinIdentifier": "li_modal",
+            "linkedinSlug": "modal",
+            "linkedinUrl": "https://www.linkedin.com/company/modal",
+            "type": "new_funding_round",
+            "summary": "Modal raised a $40M Series B.",
+            "changeData": [
+              {
+                "type": "series_c",
+                "amountUsd": 65000000,
+                "date": "2026-09-05",
+                "investors": [
+                  "Accel",
+                  "Index Ventures"
+                ]
+              }
+            ],
+            "sources": [
+              "https://www.linkedin.com/company/modal"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-09T11:30:00.000Z",
+            "eventDate": "2026-09-06T00:00:00.000Z",
+            "centiCreditsCharged": 100,
+            "isDummy": false
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "unidentifiable": {
+      "output": {
+        "signals": [
+          {
+            "id": "sig_004",
+            "entityId": "ent_",
+            "entityType": "company",
+            "linkedinIdentifier": "li_",
+            "linkedinSlug": null,
+            "linkedinUrl": null,
+            "type": "company_news",
+            "summary": "Unattributed news mention.",
+            "changeData": [],
+            "sources": [
+              "https://www.linkedin.com/company/"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-09T11:30:00.000Z",
+            "eventDate": null,
+            "centiCreditsCharged": 100,
+            "isDummy": false
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "dummy": {
+      "output": {
+        "signals": [
+          {
+            "id": "sig_dummy_001",
+            "entityId": "ent_linear",
+            "entityType": "company",
+            "linkedinIdentifier": "li_linear",
+            "linkedinSlug": "linear",
+            "linkedinUrl": "https://www.linkedin.com/company/linear",
+            "type": "new_funding_round",
+            "summary": "Linear raised a $65M Series C led by Accel.",
+            "changeData": [
+              {
+                "type": "series_c",
+                "amountUsd": 65000000,
+                "date": "2026-09-05",
+                "investors": [
+                  "Accel",
+                  "Index Ventures"
+                ]
+              }
+            ],
+            "sources": [
+              "https://www.linkedin.com/company/linear"
+            ],
+            "methodology": "Detected by comparing consecutive company snapshots.",
+            "observedAt": "2026-09-08T09:00:00.000Z",
+            "eventDate": "2026-09-05T00:00:00.000Z",
+            "centiCreditsCharged": 100,
+            "isDummy": true
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    },
+    "empty": {
+      "output": {
+        "signals": [],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "signals": [],
+      "nextCursor": null
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

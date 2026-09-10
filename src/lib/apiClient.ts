@@ -1,4 +1,15 @@
-import type { AccountInfo, ApiErrorBody, EnrichmentMeta, PlanResponse, Run, Cell, TablePayload, Table } from "@/lib/types";
+import type {
+  AccountInfo,
+  ApiErrorBody,
+  EnrichmentMeta,
+  PlanResponse,
+  Run,
+  Cell,
+  SourceMeta,
+  SourceSummary,
+  TablePayload,
+  Table,
+} from "@/lib/types";
 
 export class ApiError extends Error {
   readonly code: string;
@@ -55,6 +66,9 @@ export const api = {
     },
   ) => request<PlanResponse>(`/api/tables/${tableId}/runs`, { method: "POST", body: JSON.stringify(body) }),
 
+  latestRun: (tableId: string) =>
+    request<{ run: Run | null }>(`/api/tables/${tableId}/runs`),
+
   runStatus: (runId: string, since?: string | null) =>
     request<{ run: Run; cells: Cell[] }>(
       `/api/runs/${runId}${since ? `?since=${encodeURIComponent(since)}` : ""}`,
@@ -70,4 +84,41 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ name }),
     }),
+
+  /* Row sources */
+
+  sourceRegistry: () => request<{ sources: SourceMeta[] }>("/api/sources/registry"),
+
+  sources: (tableId: string) =>
+    request<{ sources: SourceSummary[] }>(`/api/sources?table_id=${encodeURIComponent(tableId)}`),
+
+  addSource: (
+    tableId: string,
+    body: { source_id: string; name: string; config: Record<string, unknown>; auto_enrich: boolean },
+  ) =>
+    request<{ source: SourceSummary }>(`/api/tables/${tableId}/sources`, {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+
+  updateSource: (
+    id: string,
+    body: { name?: string; status?: "active" | "paused" | "error"; auto_enrich?: boolean },
+  ) =>
+    request<{ source: SourceSummary }>(`/api/sources/${id}`, {
+      method: "PATCH",
+      body: JSON.stringify(body),
+    }),
+
+  deleteSource: (id: string) =>
+    request<{ deleted: boolean }>(`/api/sources/${id}`, { method: "DELETE" }),
+
+  pollSource: (id: string) =>
+    request<{ requested: boolean }>(`/api/sources/${id}/poll`, { method: "POST" }),
+
+  testSignal: (id: string) =>
+    request<{ fired: number; signals: Array<{ id: string; summary: string }> }>(
+      `/api/sources/${id}/test-signal`,
+      { method: "POST" },
+    ),
 };

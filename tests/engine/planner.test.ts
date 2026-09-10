@@ -207,9 +207,10 @@ function fixture(extraCells: Cell[] = []): TableWithData {
     column("C", "enrichment", 3, { x: "B" }),
     column("D", "enrichment", 4, { x: "C" }),
   ];
+  // Uploaded rows: no source, so no identity key and no signal.
   const rows: Row[] = [
-    { id: "r1", tableId: "t1", position: 0, createdAt: new Date() },
-    { id: "r2", tableId: "t1", position: 1, createdAt: new Date() },
+    { id: "r1", tableId: "t1", position: 0, createdAt: new Date(), sourceId: null, identityKey: null, signal: null },
+    { id: "r2", tableId: "t1", position: 1, createdAt: new Date(), sourceId: null, identityKey: null, signal: null },
   ];
   const cells: Cell[] = [
     cell("r1", "W", "done", "acme.com"),
