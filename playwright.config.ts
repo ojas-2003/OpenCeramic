@@ -1,9 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * The smoke test drives the real stack: Next.js, Postgres and the Inngest dev
- * server. It is deliberately not part of `pnpm test` — those 195 unit tests run
- * with no network, no database and no key, and that property is worth keeping.
+ * The smoke tests drive the real stack: Next.js, Postgres and the Inngest dev
+ * server. They are deliberately not part of `pnpm test` — those 292 unit tests
+ * run with no network, no database and no key, and that is worth keeping.
  *
  * `pnpm test:e2e` starts both services; Docker must be running.
  */

@@ -87,8 +87,9 @@ export function Grid({
                       transform: `translateY(${virtualRow.start}px)`,
                     }}
                   >
-                    <div className="flex items-center px-2 font-mono text-[11px] text-muted-foreground">
+                    <div className="flex items-center gap-1 px-2 font-mono text-[11px] text-muted-foreground">
                       {virtualRow.index + 1}
+                      <OriginChip row={row} />
                     </div>
                     {columns.map((column) => {
                       const cell = cells.get(cellKey(row.id, column.id));
@@ -122,6 +123,29 @@ export function Grid({
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Marks a row that arrived on its own. Rows uploaded from a CSV get nothing —
+ * the chip is there to say "nobody typed this", so it has to be the exception.
+ */
+function OriginChip({ row }: { row: Row }) {
+  if (!row.sourceId) return null;
+
+  const signal = row.signal;
+  const title = signal
+    ? `${signal.reason}\n${signal.kind} · ${new Date(signal.occurred_at).toLocaleString()}`
+    : "Added by a row source";
+
+  return (
+    <span
+      title={title}
+      aria-label={title}
+      className="cursor-help rounded-sm bg-emerald-500/15 px-1 text-[9px] leading-4 text-emerald-700 dark:text-emerald-400"
+    >
+      {signal ? "signal" : "auto"}
+    </span>
   );
 }
 

@@ -1,0 +1,44 @@
+{
+  "operationId": "createTrackerCompanyList",
+  "path": "/v1/tracker/company-lists",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "id": "trk_openceramic",
+        "name": "OpenCeramic company tracker",
+        "refreshIntervalDays": 7,
+        "trackingRules": [],
+        "isActive": true,
+        "isArchived": false,
+        "companyCount": 0,
+        "createdAt": "2026-09-09T12:00:00.000Z",
+        "nextRefreshAt": "2026-09-16T12:00:00.000Z",
+        "isDynamic": false
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "id": "trk_openceramic",
+      "name": "OpenCeramic company tracker",
+      "refreshIntervalDays": 7,
+      "trackingRules": [],
+      "isActive": true,
+      "isArchived": false,
+      "companyCount": 0,
+      "createdAt": "2026-09-09T12:00:00.000Z",
+      "nextRefreshAt": "2026-09-16T12:00:00.000Z",
+      "isDynamic": false
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

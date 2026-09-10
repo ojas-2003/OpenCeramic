@@ -1,6 +1,6 @@
-import type { Cell, Column, Row, Run, Table } from "@/db/schema";
+import type { Cell, Column, Row, RowSourceRecord, Run, Table } from "@/db/schema";
 
-export type { Cell, Column, Row, Run, Table };
+export type { Cell, Column, Row, RowSourceRecord, Run, Table };
 
 export type TablePayload = {
   table: Table;
@@ -33,6 +33,19 @@ export type PlanResponse = {
   counts: { total: number; cached: number };
   estimatedCredits: number;
   dryRun: boolean;
+};
+
+/** A source as the Sources bar shows it. */
+export type SourceSummary = RowSourceRecord & { rowCount: number };
+
+export type SourceMeta = {
+  id: string;
+  kind: "saved_search" | "tracker";
+  label: string;
+  description: string;
+  entity: "person" | "company";
+  configFields: Array<{ key: string; label: string; type: string }>;
+  supportsSetup: boolean;
 };
 
 export type ApiErrorBody = { error: { code: string; message: string; details?: unknown } };

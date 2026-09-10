@@ -6,7 +6,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { api } from "@/lib/apiClient";
 import { cellKey, RUN_ACTIVE_STATUSES, type Cell, type TablePayload } from "@/lib/types";
 
-const POLL_MS = 1500;
+/** One cadence for everything that watches server-side work. */
+export const POLL_MS = 1500;
 
 export function tableKey(tableId: string) {
   return ["table", tableId] as const;

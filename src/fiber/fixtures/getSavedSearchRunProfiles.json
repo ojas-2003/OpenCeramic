@@ -1,0 +1,65 @@
+{
+  "operationId": "getSavedSearchRunProfiles",
+  "path": "/v1/saved-search/run/profiles",
+  "method": "post",
+  "creditCost": 2,
+  "responses": {
+    "*": {
+      "output": {
+        "profiles": [
+          {
+            "profile": {
+              "primary_slug": "patrickcollison",
+              "url": "https://www.linkedin.com/in/patrickcollison",
+              "first_name": "Patrick",
+              "last_name": "Collison",
+              "headline": "CEO at Stripe",
+              "slugs": [
+                "patrickcollison"
+              ],
+              "user_id": "uid_patrickcollison"
+            },
+            "movementType": "joined"
+          },
+          {
+            "profile": {
+              "primary_slug": "karrisaarinen",
+              "url": "https://www.linkedin.com/in/karrisaarinen",
+              "first_name": "Karri",
+              "last_name": "Saarinen",
+              "headline": "CEO at Linear",
+              "slugs": [
+                "karrisaarinen"
+              ],
+              "user_id": "uid_karrisaarinen"
+            },
+            "movementType": "returned"
+          },
+          {
+            "profile": {
+              "primary_slug": "",
+              "first_name": "Redacted",
+              "last_name": null
+            },
+            "movementType": "joined"
+          }
+        ],
+        "nextCursor": null
+      },
+      "chargeInfo": {
+        "method": "charged-now",
+        "creditsCharged": 4
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "profiles": [],
+      "nextCursor": null
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

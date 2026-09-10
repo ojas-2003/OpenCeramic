@@ -263,14 +263,27 @@ describe("FakeFiberClient", () => {
 /* ------------------------------------------------------------------ */
 
 describe("fixtures", () => {
-  it("cover every operation the adapters need", () => {
+  it("cover every operation the adapters and sources need", () => {
     expect(listFixtures().map((f) => f.operationId).sort()).toEqual([
+      // Row sources.
+      "addTrackerCompanies",
+      "addTrackerPeople",
+      "createSavedSearch",
+      "createTrackerCompanyList",
+      "createTrackerPersonList",
+      // Enrichment adapters.
       "emailBounceDetection",
+      "fireTrackerDummy",
       "getCompanyRevenue",
+      "getLatestSavedSearchRun",
       "getOrgCredits",
       "getRateLimits",
+      "getSavedSearchRunCompanies",
+      "getSavedSearchRunProfiles",
+      "getSavedSearchRunStatus",
       "getTalentFlow",
       "kitchenSinkCompany",
+      "listTrackerSignals",
       "peopleSearch",
       "pollBatchContactDetails",
       "pollMosaic",
@@ -333,6 +346,59 @@ describe("FiberHttpClient", () => {
       companyDomain: { value: "stripe.com" },
     });
     expect(res.credits).toBe(2);
+  });
+
+  it("substitutes path parameters into a templated URL", async () => {
+    const logger = new MemoryApiCallLogger();
+    let seenUrl = "";
+
+    const client = new FiberHttpClient({
+      apiKey: "sk_live_test",
+      baseUrl: "https://api.fiber.ai",
+      logger,
+      fetchImpl: async (input) => {
+        seenUrl = (input as Request).url;
+        return jsonResponse({ output: { signals: [], nextCursor: null } });
+      },
+    });
+
+    await client.call(
+      "/v1/tracker/signals/{listId}",
+      "get",
+      { pageSize: 10 },
+      { listId: "trk_openceramic" },
+    );
+
+    expect(seenUrl).toContain("/v1/tracker/signals/trk_openceramic");
+    expect(seenUrl).not.toContain("{listId}");
+    expect(seenUrl).toContain("pageSize=10");
+
+    // api_calls keeps the template, so the operation stays groupable.
+    expect(logger.entries[0].endpoint).toBe("/v1/tracker/signals/{listId}");
+  });
+
+  it("hashes two tracker lists differently even though the body is identical", async () => {
+    const logger = new MemoryApiCallLogger();
+    const client = new FiberHttpClient({
+      apiKey: "sk_live_test",
+      logger,
+      fetchImpl: async () => jsonResponse({ output: { signals: [], nextCursor: null } }),
+    });
+
+    const call = (listId: string) =>
+      client.call("/v1/tracker/signals/{listId}", "get", { pageSize: 10 }, { listId });
+
+    await call("trk_a");
+    await call("trk_b");
+
+    // Without path params in the hash these would collapse to one cache entry.
+    expect(logger.entries[0].requestHash).not.toBe(logger.entries[1].requestHash);
+  });
+
+  it("leaves the hash unchanged for calls that take no path parameters", () => {
+    const body = { companyDomain: { value: "stripe.com" } };
+    expect(hashRequest(body, undefined)).toBe(hashRequest(body));
+    expect(hashRequest(body, {})).toBe(hashRequest(body));
   });
 
   it("sends apiKey in the query for GET", async () => {

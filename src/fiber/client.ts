@@ -42,11 +42,20 @@ export type FiberCallResult<D> = {
   apiCallId: string;
 };
 
+/**
+ * Values for a templated path such as /v1/tracker/signals/{listId}. They are
+ * passed separately rather than interpolated by the caller so that the template
+ * stays the operation's identity everywhere it matters: the api_calls endpoint,
+ * and the key FakeFiberClient looks its fixture up by.
+ */
+export type FiberPathParams = Record<string, string>;
+
 export interface FiberClient {
   call<P extends keyof paths, M extends keyof paths[P]>(
     path: P,
     method: M,
     body: FiberRequestBody<P, M>,
+    pathParams?: FiberPathParams,
   ): Promise<FiberCallResult<FiberResponseData<P, M>>>;
 }
 
@@ -113,9 +122,20 @@ export function stableStringify(value: unknown): string {
   return `{${entries.map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`).join(",")}}`;
 }
 
-/** Never includes the API key — the body handed here has already had it stripped. */
-export function hashRequest(body: unknown): string {
-  return createHash("sha256").update(stableStringify(body)).digest("hex");
+/**
+ * Never includes the API key — the body handed here has already had it stripped.
+ *
+ * Path parameters are folded in under a reserved key, because two tracker lists
+ * differ only in the URL: without this they would hash alike and collapse to one
+ * cache entry. Calls with no path parameters hash exactly as before, so existing
+ * api_calls rows and fixture keys stay valid.
+ */
+export function hashRequest(body: unknown, pathParams?: FiberPathParams): string {
+  const subject =
+    pathParams && Object.keys(pathParams).length > 0
+      ? { ...(body as Record<string, unknown>), __path: pathParams }
+      : body;
+  return createHash("sha256").update(stableStringify(subject)).digest("hex");
 }
 
 /* ------------------------------------------------------------------ */
@@ -193,6 +213,16 @@ const DEFAULT_TIMEOUT_MS = 30_000;
 const QUERY_METHODS = new Set(["GET", "DELETE"]);
 
 /**
+ * Operations that document `apiKey` as a *query* parameter despite not being a
+ * GET or DELETE. fireTrackerDummy is the only one in the spec, and it takes no
+ * request body at all, so the query carries nothing but the key.
+ *
+ * Unverified against the live API: every tracker endpoint returns 501 on a
+ * sandbox key, so this follows openapi.json rather than an observed 200.
+ */
+const QUERY_AUTH_PATHS = new Set(["/v1/tracker/fire-dummy/{listId}"]);
+
+/**
  * Transport is Fiber's official SDK (`@fiberai/sdk`); the wrapper around it is
  * what the rest of the app depends on.
  *
@@ -231,28 +261,32 @@ export class FiberHttpClient implements FiberClient {
     path: P,
     method: M,
     body: FiberRequestBody<P, M>,
+    pathParams?: FiberPathParams,
   ): Promise<FiberCallResult<FiberResponseData<P, M>>> {
     if (!this.apiKey) {
       throw new Error("FIBER_API_KEY is not set");
     }
 
+    // Deliberately the template, not the resolved URL: api_calls groups by
+    // operation, and the SDK substitutes {listId} itself from `path` below.
     const endpoint = String(path);
     const httpMethod = String(method).toUpperCase();
     const input = (body ?? {}) as Record<string, unknown>;
 
     // The hash identifies the request independently of credentials, so the same
     // lookup made with a different key still collapses to one cache entry.
-    const requestHash = hashRequest(input);
+    const requestHash = hashRequest(input, pathParams);
 
     // llms.txt: GET/DELETE carry the key in the query string, POST/PATCH/PUT in
     // the body. The SDK sends whichever we hand it.
-    const isQuery = QUERY_METHODS.has(httpMethod);
+    const isQuery = QUERY_METHODS.has(httpMethod) || QUERY_AUTH_PATHS.has(endpoint);
     const request = {
       url: endpoint,
       // Never throw on a non-2xx; the error taxonomy below classifies it.
       throwOnError: false as const,
       headers: { "x-api-key": this.apiKey },
       signal: AbortSignal.timeout(this.timeoutMs),
+      ...(pathParams ? { path: pathParams } : {}),
       ...(isQuery
         ? { query: { ...input, apiKey: this.apiKey } }
         : { body: { ...input, apiKey: this.apiKey } }),

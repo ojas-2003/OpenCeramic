@@ -33,6 +33,33 @@ endpoints:
 | `startMosaic` | 501 |
 | `getOrgCredits`, `getRateLimits` | 501 |
 
+The row-source feature added seventeen more operations, probed the same way
+([`scripts/probe-sources.ts`](scripts/probe-sources.ts)). **Every one returns
+501** — 0 of 17 reachable, 0 credits charged:
+
+| Operation | Sandbox |
+|---|---|
+| `createSavedSearch` | 501 |
+| `listSavedSearch` | 501 |
+| `manuallySpawnSavedSearchRun` | 501 |
+| `getLatestSavedSearchRun` | 501 |
+| `getSavedSearchRunStatus` | 501 |
+| `getSavedSearchRunProfiles` | 501 |
+| `getSavedSearchRunCompanies` | 501 |
+| `listAvailableTrackerRules` | 501 |
+| `getTrackerOverview` | 501 |
+| `createTrackerCompanyList` | 501 |
+| `createTrackerPersonList` | 501 |
+| `addTrackerCompanies` | 501 |
+| `addTrackerPeople` | 501 |
+| `listTrackerSignals` | 501 |
+| `previewTrackerSignal` | 501 |
+| `fireTrackerDummy` | 501 |
+| `refreshTrackerPersonList` | 501 |
+
+Twenty-three of twenty-four operations this project touches are unreachable on a
+sandbox key.
+
 ```
 POST /v1/kitchen-sink/company
 {"message":"Sandbox mode is not yet available for this endpoint."}
@@ -45,7 +72,11 @@ responses recorded from `openapi.json`-typed fixtures.
 One trap worth flagging: **body validation runs before the sandbox check**, so
 probing an endpoint with an incomplete body returns `400 body/x Required` and
 looks reachable. Only a valid body reveals the 501. That is how I originally
-undercounted this.
+undercounted this — and it caught me a second time on `createSavedSearch`, whose
+required `spawnFrequencyDays` appears in neither the per-operation docs (they
+truncate at 64KB) nor anywhere near the rest of that body in the generated
+types. It returned `400 body/spawnFrequencyDays Required` until I supplied it,
+and 501 the moment I did.
 
 **What that does and does not mean.** The DAG resolution, level ordering,
 caching, retry/backoff, credit accounting, skip semantics and durable execution
@@ -95,6 +126,72 @@ profiles, so `Validate email` **skipped with a stated reason** rather than
 failing on a null email or leaving a silent blank. That distinction is the point
 of the engine.
 
+## Rows that arrive on their own
+
+Everything above is pull: someone uploads a CSV and presses Run. A **row source**
+inverts that. Attach one to a table and it polls Fiber on a schedule, discovers
+entities, inserts them as rows, and immediately plans and triggers a run scoped
+to just those rows. A company raises a round and the row is already enriched by
+the time anyone opens the tab.
+
+Two sources ship: a **saved search**, which Fiber re-runs on its own schedule and
+which reports who newly matches it, and a **tracker**, which watches a list of
+companies or people and emits a signal when one of them changes.
+
+**Sources create rows and never fill cells; enrichments fill cells and never
+create rows.** That separation is the whole design, and the layers mirror each
+other deliberately — `src/sources/**` has the same shape as `src/enrichments/**`
+(a `types.ts`, a `registry.ts`, one file per source), and just as the executor
+never imports an adapter, [`src/engine/poller.ts`](src/engine/poller.ts) never
+imports a source. Adding a third source is one file plus one line in
+`src/sources/index.ts`.
+
+### The cursor never advances on a failure
+
+A source is a pure function of `(config, cursor) → (rows, cursor)`. It takes a
+cursor and returns one; it never touches the database. That is what makes the
+rules testable without a table to poll into, exactly as `processWork` is testable
+without a run.
+
+The one rule the whole thing rests on: **a poll that fails returns the cursor it
+was given.** A cursor that advances past results nobody read loses those rows
+permanently, because the next poll asks only for what came after. So a saved
+search whose run is still building returns no rows and an unchanged cursor rather
+than marking the run as seen, and `pollSource` returns `work.cursor` by identity
+on every failure path. Three of the poller's tests exist solely to hold that line.
+
+Dedupe is a partial unique index on `rows(table_id, identity_key)`, partial
+because CSV rows have no identity and would otherwise all collide on null.
+`insertRowsIfNew` uses `ON CONFLICT … DO NOTHING … RETURNING`, so it hands back
+only the rows that were genuinely new. Polling the same source twice cannot
+produce a second row for the same company.
+
+### Unattended spend is capped separately
+
+A human pressing Run has seen the estimate. A cron has not. So auto-triggered
+runs are capped by `MAX_AUTO_CREDITS_PER_POLL` (default 200), independent of the
+`MAX_CREDITS_PER_RUN` limit a person is subject to.
+
+The cap is checked **between pricing and dispatch** — after `planRun` returns an
+estimate, before `triggerRun`. That is the only place a cap can actually prevent
+spending; by the time the executor is running, the credits are already going out.
+When a poll would cost too much the run is not started, the source is paused with
+an explanation, and `planRun` has already written the cells as `pending`, so they
+sit waiting for a human to approve them with **Run anyway**.
+
+### Try it
+
+```bash
+pnpm db:seed     # seeds the demo table and "Demo — Funding signals"
+```
+
+Open **Demo — Funding signals** — an empty table with a tracker watching it —
+and press **Fire test signal**. A row appears carrying the reason it arrived, and
+enriches itself. Nobody presses Run.
+
+You can also build one by hand: **Add source → Tracker**, give it a rule like
+`new_funding_round`, and fire a signal at it.
+
 ## Architecture
 
 ```mermaid
@@ -104,10 +201,12 @@ flowchart LR
   end
 
   subgraph Vercel["Vercel (Next.js)"]
-    API[Route handlers<br/>/api/tables, /columns, /runs]
+    API[Route handlers<br/>/api/tables, /columns, /runs, /sources]
     Planner[Run Planner<br/>DAG resolve → cell jobs]
     Registry[Enrichment Registry<br/>enrichments/*.ts]
+    Sources[Source Registry<br/>sources/*.ts]
     InngestFn[Inngest function<br/>execute-run]
+    PollFn[Inngest function<br/>poll-sources · cron 15m]
   end
 
   subgraph Inngest["Inngest (durable execution)"]
@@ -115,7 +214,7 @@ flowchart LR
   end
 
   subgraph Data["Neon Postgres"]
-    DB[(tables · columns · rows<br/>cells · runs · cache · api_calls)]
+    DB[(tables · columns · rows · cells<br/>runs · row_sources · cache · api_calls)]
   end
 
   Fiber[(Fiber AI API)]
@@ -126,6 +225,11 @@ flowchart LR
   Queue --> InngestFn
   InngestFn --> Registry --> Fiber
   InngestFn --> DB
+
+  Queue -- cron / poll.requested --> PollFn
+  PollFn --> Sources --> Fiber
+  PollFn -- new rows --> DB
+  PollFn -- under the auto cap --> Planner
 ```
 
 **The planner** ([src/engine/planner.ts](src/engine/planner.ts)) builds an edge
@@ -151,6 +255,13 @@ between, so a poll loop survives a redeploy.
 **The cell is the job record.** Its primary key is `(row_id, column_id)`, so
 every write is an upsert and a redelivered event is harmless. There is no jobs
 table.
+
+**The poller** ([src/engine/poller.ts](src/engine/poller.ts)) is the same shape
+again: a pure core that takes a cursor and returns one, wrapped by an Inngest
+function ([poller.inngest.ts](src/engine/poller.inngest.ts)) that runs it on a
+cron, writes the rows it found, and asks the planner to price them. It resolves
+sources through the registry and never imports one — the same rule the executor
+follows for adapters.
 
 ## Add an enrichment in 30 lines
 
@@ -393,7 +504,7 @@ Verify by loading the demo table on production and running it.
 
 ## Tests
 
-**183 tests, no database, no network, no Inngest harness.** They run in about
+**292 tests, no database, no network, no Inngest harness.** They run in about
 half a second.
 
 | Area | Covers |
@@ -403,6 +514,10 @@ half a second.
 | `tests/enrichments/contract.test.ts` | Every adapter: unique `fiber.*` id, mode matches implemented methods, output parses, cache keys stable under normalisation, estimates match fixture charges |
 | `tests/fiber/*` | Request hashing stable across key order, error taxonomy, credit extraction, fixtures typechecked against the generated OpenAPI types |
 | `tests/api/columns.test.ts` | Column validation: bad adapter, wrong entity, unmapped input, unknown source, self-reference, cycle |
+| `tests/sources/*` | Both row sources: an unchanged run id yields nothing, an in-progress run does not advance the cursor, equal-timestamp signals are disambiguated by `seen_ids`, identities normalise consistently |
+| `tests/engine/poller.test.ts` | The cursor rules: a thrown error returns the *original* cursor object, retryable vs terminal classification, a source that returns no cursor keeps the one it was given |
+| `tests/engine/poller.budget.test.ts` | `MAX_AUTO_CREDITS_PER_POLL`: over the cap does not call `triggerRun` at all, at the cap does, and the run is scoped to the new rows |
+| `tests/api/sources.test.ts` | Source routes: `setup()` ids merged into config, config validated before Fiber is called, a saved search refused a test signal |
 | `tests/lib/mosaic.test.ts` | Mosaic start/poll, healed-CSV download and parse, expired link, column cap |
 
 ### One end-to-end test
@@ -413,13 +528,19 @@ run it, and assert **every cell reaches a terminal state**, then that re-running
 does not redo work that already succeeded.
 
 A second spec covers creating and deleting a table, including that the row is
-gone from the server after a reload rather than only from the client cache.
+gone from the server after a reload rather than only from the client cache. A
+third attaches a tracker to an empty table, fires a test signal, and asserts a
+row arrives carrying the signal that caused it and reaches terminal states with
+nobody pressing Run — then that polling again adds nothing.
 
-Both are deliberately separate from `pnpm test`. Those 195 unit tests run with no
-network, no database and no key, and that property is worth protecting.
+All three are deliberately separate from `pnpm test`. Those 292 unit tests run
+with no network, no database and no key, and that property is worth protecting.
 
-It found a real bug on its first green run. `RunConfirmDialog` keys its dry-run
-preview on the request, and two runs of the same scope produce an identical key —
+Each of them found a real bug on its first green run. The tracker spec found two:
+adding a source did not refetch the list, so it never appeared until a reload;
+and the grid never watched a run it had not started itself, so a poller-triggered
+enrichment sat on stale `pending` cells forever. The demo spec found the first:
+`RunConfirmDialog` keys its dry-run preview on the request, and two runs of the same scope produce an identical key —
 so reopening the dialog after a run served the *previous* estimate from cache,
 on the one screen whose entire purpose is telling you what you are about to
 spend. Fixed by making that query always refetch.
@@ -431,9 +552,8 @@ the whole setup.
 
 ## What I would do next
 
-- **Webhook completion** for async endpoints instead of polling
-- **Trackers / Saved Search as auto-refreshing row sources** — new prospects
-  appear and enrich themselves
+- **Webhook completion** for async endpoints instead of polling — trackers
+  already support it, which would drop the 15-minute cron latency to seconds
 - **Formula and AI columns**; conditional runs ("only enrich if revenue > $10M")
 - **`KitchenSinkProfile` resolving a person from an email alone**, so a table
   seeded with only email addresses can run the whole chain
@@ -454,10 +574,22 @@ Stated plainly, because a reviewer will find them:
 - **`/api/account` cannot show a real balance on a sandbox key** — both
   `getOrgCredits` and `getRateLimits` return 501. It degrades to `null` with the
   reason attached.
-- **The Inngest wrapper has no automated test.** Its logic lives in tested pure
-  functions, and it has been exercised by many real runs, but the wrapper itself
-  is verified manually.
+- **The Inngest wrappers have no automated test.** Their logic lives in tested
+  pure functions, and both have been exercised by many real runs, but the
+  wrappers themselves are verified manually and by the Playwright specs.
 - **"Load demo table" creates a new table each click** rather than reusing one.
+- **Two row sources on one table can insert the same company twice.** A saved
+  search keys a company by domain; a tracker signal carries no domain, only a
+  LinkedIn URL, so it keys by that. Closing the gap needs an enrichment lookup,
+  which a source is not allowed to make.
+- **A cron sweep can overlap an on-demand poll of the same source.** Per-source
+  concurrency stops a source overlapping itself, but not that. The cost is a
+  duplicate Fiber call, never a duplicate row — the identity index sees to that.
+- **Row `position` can still collide under concurrent inserts.** It is derived
+  inside the INSERT rather than by a prior SELECT, but `neon-http` has no
+  interactive transactions to hold a lock across statements. Ties are possible;
+  `getTableWithData` orders by `(position, id)` so they are at least
+  deterministic.
 
 The per-step build log in [docs/steps/](docs/steps/) records every design
 decision, every deviation from the plan, and every bug found along the way.

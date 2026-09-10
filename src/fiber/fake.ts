@@ -1,4 +1,15 @@
+import addTrackerCompanies from "@/fiber/fixtures/addTrackerCompanies.json";
+import addTrackerPeople from "@/fiber/fixtures/addTrackerPeople.json";
+import createSavedSearch from "@/fiber/fixtures/createSavedSearch.json";
+import createTrackerCompanyList from "@/fiber/fixtures/createTrackerCompanyList.json";
+import createTrackerPersonList from "@/fiber/fixtures/createTrackerPersonList.json";
 import emailBounceDetection from "@/fiber/fixtures/emailBounceDetection.json";
+import fireTrackerDummy from "@/fiber/fixtures/fireTrackerDummy.json";
+import getLatestSavedSearchRun from "@/fiber/fixtures/getLatestSavedSearchRun.json";
+import getSavedSearchRunCompanies from "@/fiber/fixtures/getSavedSearchRunCompanies.json";
+import getSavedSearchRunProfiles from "@/fiber/fixtures/getSavedSearchRunProfiles.json";
+import getSavedSearchRunStatus from "@/fiber/fixtures/getSavedSearchRunStatus.json";
+import listTrackerSignals from "@/fiber/fixtures/listTrackerSignals.json";
 import getOrgCredits from "@/fiber/fixtures/getOrgCredits.json";
 import getTalentFlow from "@/fiber/fixtures/getTalentFlow.json";
 import getRateLimits from "@/fiber/fixtures/getRateLimits.json";
@@ -20,6 +31,7 @@ import {
   type ApiCallLogger,
   type FiberCallResult,
   type FiberClient,
+  type FiberPathParams,
   type FiberRequestBody,
   type FiberResponseData,
 } from "@/fiber/client";
@@ -54,6 +66,17 @@ const FIXTURES: FiberFixture[] = [
   getTalentFlow,
   startMosaic,
   pollMosaic,
+  createSavedSearch,
+  getLatestSavedSearchRun,
+  getSavedSearchRunStatus,
+  getSavedSearchRunProfiles,
+  getSavedSearchRunCompanies,
+  createTrackerCompanyList,
+  createTrackerPersonList,
+  addTrackerCompanies,
+  addTrackerPeople,
+  listTrackerSignals,
+  fireTrackerDummy,
 ] as FiberFixture[];
 
 const BY_PATH = new Map(FIXTURES.map((f) => [f.path, f]));
@@ -120,7 +143,10 @@ export class FakeFiberClient implements FiberClient {
     path: P,
     method: M,
     body: FiberRequestBody<P, M>,
+    pathParams?: FiberPathParams,
   ): Promise<FiberCallResult<FiberResponseData<P, M>>> {
+    // The template, never the resolved URL — that is what fixtures are keyed by,
+    // so /v1/tracker/signals/{listId} serves every list from one fixture.
     const endpoint = String(path);
     const fixture = BY_PATH.get(endpoint);
     if (!fixture) {
@@ -128,7 +154,7 @@ export class FakeFiberClient implements FiberClient {
     }
 
     const input = (body ?? {}) as Record<string, unknown>;
-    const requestHash = hashRequest(input);
+    const requestHash = hashRequest(input, pathParams);
     const attempt = (this.attemptCounts.get(endpoint) ?? 0) + 1;
     this.attemptCounts.set(endpoint, attempt);
 

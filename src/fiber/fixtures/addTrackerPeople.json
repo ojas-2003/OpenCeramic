@@ -1,0 +1,45 @@
+{
+  "operationId": "addTrackerPeople",
+  "path": "/v1/tracker/person-lists/{listId}/people",
+  "method": "put",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "added": 1,
+        "pending": 0,
+        "skipped": 0,
+        "invalidPeople": [],
+        "initialSignals": {
+          "triggered": false,
+          "peopleQueued": 0
+        }
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "added": 0,
+      "pending": 0,
+      "skipped": 0,
+      "invalidPeople": [
+        {
+          "index": 0,
+          "reason": "Person not found"
+        }
+      ],
+      "initialSignals": {
+        "triggered": false,
+        "peopleQueued": 0
+      }
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

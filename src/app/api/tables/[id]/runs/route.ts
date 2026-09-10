@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 
-import { createRun, getTableWithData, upsertCells } from "@/db/queries";
+import { createRun, getTableWithData, latestRunForTable, upsertCells } from "@/db/queries";
 import { cacheLookup } from "@/engine/cache";
 import { PlanError, planRun } from "@/engine/planner";
 import { triggerRun } from "@/engine/trigger";
@@ -21,6 +21,14 @@ const bodySchema = z.object({
 });
 
 type Params = { params: Promise<{ id: string }> };
+
+/** The table's most recent run, so the grid can pick up one a source started. */
+export async function GET(_request: Request, { params }: Params): Promise<NextResponse> {
+  return handle(async () => {
+    const { id: tableId } = await params;
+    return NextResponse.json({ run: await latestRunForTable(tableId) });
+  });
+}
 
 export async function POST(request: Request, { params }: Params): Promise<NextResponse> {
   return handle(async () => {

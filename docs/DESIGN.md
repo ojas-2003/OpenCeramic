@@ -59,10 +59,12 @@ flowchart LR
   end
 
   subgraph Vercel["Vercel (Next.js)"]
-    API[Route handlers<br/>/api/tables, /columns, /runs]
+    API[Route handlers<br/>/api/tables, /columns, /runs, /sources]
     Planner[Run Planner<br/>DAG resolve → cell jobs]
     Registry[Enrichment Registry<br/>enrichments/*.ts]
+    Sources[Source Registry<br/>sources/*.ts]
     InngestFn[Inngest function<br/>execute-run]
+    PollFn[Inngest function<br/>poll-sources · cron 15m]
   end
 
   subgraph Inngest["Inngest (durable execution)"]
@@ -70,7 +72,7 @@ flowchart LR
   end
 
   subgraph Data["Neon Postgres"]
-    DB[(tables · columns · rows<br/>cells · runs · cache · api_calls)]
+    DB[(tables · columns · rows · cells<br/>runs · row_sources · cache · api_calls)]
   end
 
   Fiber[(Fiber AI API)]
@@ -81,6 +83,11 @@ flowchart LR
   Queue --> InngestFn
   InngestFn --> Registry --> Fiber
   InngestFn --> DB
+
+  Queue -- cron / sources/poll.requested --> PollFn
+  PollFn --> Sources --> Fiber
+  PollFn -- rows it discovered --> DB
+  PollFn -- under MAX_AUTO_CREDITS_PER_POLL --> Planner
 ```
 
 ### 2.1 Why this shape
@@ -446,7 +453,116 @@ Two design decisions were made under duress and are worth stating:
 ## 12. Future work (README section, not code)
 
 - Webhook completion for async endpoints (`/v1/webhooks/endpoints`) instead of polling
-- Trackers / Saved Search as **auto-refreshing row sources** — new prospects appear and enrich themselves
 - Formula and AI columns; conditional runs ("only enrich if revenue > $10M")
 - Multi-tenant auth, per-org keys and credit budgets
 - Postgres `SKIP LOCKED` worker as an Inngest-free deployment mode for self-hosters
+
+---
+
+## 13. Row sources (built)
+
+Sections 1–12 describe a pull system: a human uploads a CSV and presses Run.
+A **row source** makes the table push-based. It polls Fiber on a schedule,
+discovers entities, inserts them as rows deduped by identity, and immediately
+plans and triggers a run scoped to only those new rows.
+
+### 13.1 The layer rule
+
+A source **discovers entities and creates rows**. An enrichment **fills cells**.
+Neither does the other's job. Section 5.2 already said row sourcing is not an
+enrichment; this is that statement made structural.
+
+`src/sources/**` mirrors `src/enrichments/**` — `types.ts`, `registry.ts`, one
+file per source — and the poller resolves sources through the registry exactly
+as the executor resolves adapters. Neither imports a concrete implementation.
+The registry validates at register time that a source's `kind` matches its id
+(`fiber.source.savedSearch` ⇄ `saved_search`), which is also what lets the
+poller find an adapter from the `kind` stored on a `row_sources` row.
+
+### 13.2 Schema
+
+```
+row_sources
+  id, table_id FK, kind (saved_search | tracker), name,
+  config jsonb,            -- validated by the source's own Zod schema
+  cursor jsonb,            -- { last_run_id?, last_signal_at?, seen_ids? }
+  status (active | paused | error), auto_enrich, error_message, last_polled_at
+
+rows  += source_id FK (ON DELETE SET NULL), identity_key, signal jsonb
+```
+
+The dedupe guarantee is a **partial** unique index on
+`rows(table_id, identity_key) WHERE identity_key IS NOT NULL`. Partial matters:
+CSV rows have no identity, and a total index would make every one of them
+collide on null. `insertRowsIfNew` infers that index with a matching predicate
+on `ON CONFLICT … DO NOTHING … RETURNING`, so it returns only rows that were
+genuinely new.
+
+Deleting a source nulls `source_id` rather than cascading — stopping the polling
+should not throw away what it found.
+
+### 13.3 The cursor contract
+
+`poll(config, cursor, ctx) → { rows, cursor, note? }` is pure with respect to
+the database, like `processWork` in section 4.3. It takes a cursor and returns
+one and never writes.
+
+**A cursor advances only on a poll that completed.** Everything else returns the
+cursor unchanged:
+
+| Situation | Cursor |
+|---|---|
+| Saved search run id equals `last_run_id` | unchanged, no rows |
+| Run still `PROCESSING` | unchanged, note "run in progress" |
+| Run `FAILED` / `REJECTED_NO_FUNDS` | unchanged |
+| Anything thrown | unchanged, error mapped via `toAdapterError` |
+| Run `COMPLETED` and paged | `last_run_id` ← the new run |
+
+The reason is asymmetric cost. Advancing a cursor past results nobody read loses
+those rows *permanently*, because the next poll asks only for what came after;
+failing to advance costs one redundant poll. `pollSource` returns `work.cursor`
+by identity on every failure path so no partially-built cursor can escape.
+
+For trackers the cursor is a timestamp plus a bounded tail of the last 500
+signal ids. The timestamp does the work; the ids exist because several signals
+can share one `observedAt`, and a timestamp alone would either re-import them
+every poll or skip whichever it did not see first. The filter is
+`observedAt >= last_signal_at AND id ∉ seen_ids`.
+
+### 13.4 Unattended spend
+
+`MAX_AUTO_CREDITS_PER_POLL` (default 200) is separate from, and far below,
+`MAX_CREDITS_PER_RUN`. A human pressing Run has seen the estimate; a cron has
+not.
+
+The check sits **between `planRun` and `triggerRun`** — the only point at which
+a cap can actually prevent spending, since once the executor is running the
+credits are already going out. Over the cap: the run is not started, the source
+is paused with an explanation, and the cells `planRun` already wrote stay
+`pending` for a human to approve.
+
+### 13.5 Sandbox reality
+
+All seventeen saved-search and tracker operations return 501 on a sandbox key
+(0 of 17 reachable — see the README's coverage table). The sources are built
+against the generated OpenAPI types and served from recorded fixtures, exactly
+as the enrichment adapters are. `setup()` attaches each tracker rule twice, once
+real and once `isDummy: true`, because dummy rules are the only thing
+`fireTrackerDummy` can fire and creating them is free — that is what makes
+"Fire test signal" work end to end.
+
+### 13.6 Known limits
+
+- **Cross-source identity.** A saved-search company keys on its domain; a
+  tracker signal carries no domain at all, only a LinkedIn URL, so it keys on
+  that. Two sources on one table can therefore insert the same company twice.
+  Resolving it would require an enrichment call, which a source must not make.
+- **Poll overlap.** `concurrency: { limit: 1, key: "event.data.sourceId" }`
+  stops a source overlapping itself and stops cron sweeps overlapping each
+  other, but a sweep can still overlap an on-demand poll of the same source.
+  The cost is a duplicate Fiber call and a redundant run, never a duplicate row.
+- **Row position.** `createRows` and `insertRowsIfNew` derive `position` inside
+  the INSERT, but `drizzle-orm/neon-http` has no interactive transactions to
+  hold a lock across statements, so two inserts genuinely in flight together can
+  still collide. `getTableWithData` therefore orders by `(position, id)`: ties
+  are possible, and deterministic.

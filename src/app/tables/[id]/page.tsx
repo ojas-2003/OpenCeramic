@@ -8,11 +8,12 @@ import { CellSheet } from "@/components/grid/CellSheet";
 import { ImportCsvDialog } from "@/components/grid/ImportCsvDialog";
 import { RunConfirmDialog, type RunRequest } from "@/components/grid/RunConfirmDialog";
 import { Grid } from "@/components/grid/Grid";
+import { SourcesBar } from "@/components/grid/SourcesBar";
 import { TableHeader } from "@/components/grid/TableHeader";
 import { tableKey, useRunPolling, useStartRun } from "@/components/grid/useTableRun";
 import { useToast } from "@/components/Toaster";
 import { api } from "@/lib/apiClient";
-import { cellKey, type Cell } from "@/lib/types";
+import { cellKey, RUN_ACTIVE_STATUSES, type Cell } from "@/lib/types";
 
 export default function TablePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: tableId } = use(params);
@@ -85,6 +86,31 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
         onImport={() => setImporting(true)}
       />
 
+      <SourcesBar
+        tableId={tableId}
+        tableEntity={table.data.table.entityType}
+        onNotify={toast.notify}
+        onPollSettled={() => {
+          // A source may have planned and started a run on its own. Adopting it
+          // here means the existing polling loop shows it filling in, rather
+          // than the grid sitting on stale pending cells until a reload.
+          void api.latestRun(tableId).then((result) => {
+            if (result.run && RUN_ACTIVE_STATUSES.has(result.run.status)) setRunId(result.run.id);
+          });
+        }}
+        onRunPendingFor={(source) => {
+          // The rows this source added. planRun already wrote their cells as
+          // pending; this is the same confirmation dialog a human run uses,
+          // scoped to exactly those rows.
+          const rowIds = rows.filter((r) => r.sourceId === source.id).map((r) => r.id);
+          if (rowIds.length === 0) {
+            toast.fail("This source has no rows waiting to be enriched.");
+            return;
+          }
+          setProposed({ scope: "table", target: { column_ids: [], row_ids: rowIds } });
+        }}
+      />
+
       {error ? (
         <button
           type="button"
@@ -98,7 +124,7 @@ export default function TablePage({ params }: { params: Promise<{ id: string }> 
       {rows.length === 0 ? (
         <Placeholder>
           <div className="flex flex-col items-center gap-3">
-            <p>This table has no rows yet.</p>
+            <p>This table has no rows yet. Import a CSV, or add a source and let them arrive.</p>
             <button
               type="button"
               onClick={() => setImporting(true)}

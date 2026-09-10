@@ -1,0 +1,26 @@
+{
+  "operationId": "createSavedSearch",
+  "path": "/v1/saved-search/create",
+  "method": "post",
+  "creditCost": 0,
+  "responses": {
+    "*": {
+      "output": {
+        "id": "ss_seedstage_saas"
+      },
+      "chargeInfo": {
+        "method": "free",
+        "message": "No credits are charged for this API."
+      }
+    }
+  },
+  "notFound": {
+    "output": {
+      "id": "ss_seedstage_saas"
+    },
+    "chargeInfo": {
+      "method": "free",
+      "message": "No credits are charged for this API."
+    }
+  }
+}

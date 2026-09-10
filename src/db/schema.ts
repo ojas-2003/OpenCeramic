@@ -1,4 +1,6 @@
+import { sql } from "drizzle-orm";
 import {
+  boolean,
   index,
   integer,
   jsonb,
@@ -7,6 +9,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 
@@ -51,6 +54,33 @@ export type RunCounts = {
   cache_hits: number;
 };
 
+/**
+ * A source's own settings — a saved search id, a tracker list id, the rules to
+ * watch. The shape is the source's business; the registry validates it with the
+ * source's Zod schema before it is ever written here.
+ */
+export type SourceConfig = Record<string, unknown>;
+
+/**
+ * How far a source got last time it polled. It advances only on a successful
+ * poll: a failed or half-finished poll writes the cursor back unchanged, so no
+ * discovered entity is ever skipped over. `seen_ids` is a bounded tail of
+ * recent signal ids, guarding against several signals sharing a timestamp.
+ */
+export type SourceCursor = {
+  last_run_id?: string;
+  last_signal_at?: string;
+  seen_ids?: string[];
+};
+
+/** Why a row arrived, when a tracker signal put it here rather than a CSV. */
+export type RowSignal = {
+  kind: string;
+  reason: string;
+  occurred_at: string;
+  raw_id?: string;
+};
+
 /* ------------------------------------------------------------------ */
 /* Enums                                                               */
 /* ------------------------------------------------------------------ */
@@ -65,6 +95,8 @@ export const cellStatus = pgEnum("cell_status", [
   "failed",
   "skipped",
 ]);
+export const sourceKind = pgEnum("source_kind", ["saved_search", "tracker"]);
+export const sourceStatus = pgEnum("source_status", ["active", "paused", "error"]);
 export const runScope = pgEnum("run_scope", ["cell", "column", "table"]);
 export const runStatus = pgEnum("run_status", [
   "planned",
@@ -103,6 +135,36 @@ export const columns = pgTable(
   (t) => [index("columns_table_position_idx").on(t.tableId, t.position)],
 );
 
+/**
+ * A source attached to a table polls Fiber on a schedule and inserts the rows
+ * it discovers. It is the push half of the app: the table fills itself rather
+ * than waiting for a CSV. Sources create rows and never touch cells; that is
+ * the executor's job.
+ */
+export const rowSources = pgTable(
+  "row_sources",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    tableId: uuid("table_id")
+      .notNull()
+      .references(() => tables.id, { onDelete: "cascade" }),
+    kind: sourceKind("kind").notNull(),
+    name: text("name").notNull(),
+    config: jsonb("config").$type<SourceConfig>().notNull(),
+    cursor: jsonb("cursor").$type<SourceCursor>().notNull().default({}),
+    status: sourceStatus("status").notNull().default("active"),
+    autoEnrich: boolean("auto_enrich").notNull().default(true),
+    errorMessage: text("error_message"),
+    lastPolledAt: timestamp("last_polled_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
+  },
+  (t) => [
+    index("row_sources_table_idx").on(t.tableId),
+    // The poller's work list: active sources, least recently polled first.
+    index("row_sources_status_polled_idx").on(t.status, t.lastPolledAt),
+  ],
+);
+
 export const rows = pgTable(
   "rows",
   {
@@ -111,9 +173,24 @@ export const rows = pgTable(
       .notNull()
       .references(() => tables.id, { onDelete: "cascade" }),
     position: integer("position").notNull(),
+    /** Null for a row that a human uploaded. Kept when its source is deleted. */
+    sourceId: uuid("source_id").references(() => rowSources.id, { onDelete: "set null" }),
+    /** Normalised domain or LinkedIn URL. Null for CSV rows, which have no identity. */
+    identityKey: text("identity_key"),
+    signal: jsonb("signal").$type<RowSignal>(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow(),
   },
-  (t) => [index("rows_table_position_idx").on(t.tableId, t.position)],
+  (t) => [
+    index("rows_table_position_idx").on(t.tableId, t.position),
+    /**
+     * The whole dedupe story: polling the same source twice cannot insert the
+     * same entity twice. Partial, because CSV rows have no identity_key and
+     * every one of them would otherwise collide on null.
+     */
+    uniqueIndex("rows_table_identity_idx")
+      .on(t.tableId, t.identityKey)
+      .where(sql`${t.identityKey} is not null`),
+  ],
 );
 
 /**
@@ -199,6 +276,13 @@ export type NewColumn = typeof columns.$inferInsert;
 export type Row = typeof rows.$inferSelect;
 export type NewRow = typeof rows.$inferInsert;
 
+/**
+ * The persisted source. Named `…Record` because `RowSource` is the source
+ * adapter interface in src/sources/types.ts, and the poller handles both.
+ */
+export type RowSourceRecord = typeof rowSources.$inferSelect;
+export type NewRowSourceRecord = typeof rowSources.$inferInsert;
+
 export type Cell = typeof cells.$inferSelect;
 export type NewCell = typeof cells.$inferInsert;
 
@@ -214,5 +298,7 @@ export type NewApiCall = typeof apiCalls.$inferInsert;
 export type EntityType = (typeof entityType.enumValues)[number];
 export type ColumnKind = (typeof columnKind.enumValues)[number];
 export type CellStatus = (typeof cellStatus.enumValues)[number];
+export type SourceKind = (typeof sourceKind.enumValues)[number];
+export type SourceStatus = (typeof sourceStatus.enumValues)[number];
 export type RunScope = (typeof runScope.enumValues)[number];
 export type RunStatus = (typeof runStatus.enumValues)[number];
